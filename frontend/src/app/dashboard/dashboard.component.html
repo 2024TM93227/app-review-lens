@@ -1,0 +1,245 @@
+<div class="dashboard-container">
+  <header class="app-header">
+    <div class="app-header-box">
+      <h1>App Review Lens</h1>
+      <p>High-impact product intelligence from live app reviews</p>
+    </div>
+  </header>
+
+  <div class="controls-panel">
+    <div class="app-selector">
+      <label>Select App:</label>
+      <select [(ngModel)]="appId" class="app-input">
+        <option *ngFor="let app of monitoredApps" [value]="app.id">{{ app.name }} ({{ app.id }})</option>
+      </select>
+    </div>
+    
+    <div class="action-buttons">
+      <button (click)="ingestReviews()" class="btn btn-primary" [disabled]="loading">
+        📥 Ingest Reviews
+      </button>
+      <button (click)="generateInsights()" class="btn btn-secondary" [disabled]="loading">
+        ⚡ Generate Insights
+      </button>
+      <button routerLink="/compare" class="btn btn-primary" style="background:#7158e2; border-color:#5f45c8;">📊 Go to Compare</button>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="loading-spinner">
+    <div class="spinner"></div>
+    <p>Loading data...</p>
+  </div>
+
+  <div *ngIf="error" class="error-banner">
+    ❌ {{ error }}
+  </div>
+  <div *ngIf="infoMessage" class="info-banner">
+    ✅ {{ infoMessage }}
+  </div>
+
+  <div *ngIf="!loading && stats.total_reviews" class="dashboard-content">
+    <!-- Summary Stats -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <h3>Total Reviews</h3>
+        <p class="stat-value">{{ stats.total_reviews }}</p>
+      </div>
+      <div class="stat-card">
+        <h3>Avg Rating</h3>
+        <p class="stat-value">{{ stats.avg_rating | number:'1.1-1' }} / 5</p>
+      </div>
+      <div class="stat-card">
+        <h3>Sentiment Score</h3>
+        <p class="stat-value">{{ stats.avg_sentiment_score | number:'1.2-2' }}</p>
+      </div>
+      <div class="stat-card">
+        <h3>Positive Reviews</h3>
+        <p class="stat-value">{{ stats.sentiment_distribution.positive }}</p>
+      </div>
+    </div>
+
+    <!--<div class="support-alert" *ngIf="supportInsights.length > 0">
+      <div class="support-box">
+        <h3>🚨 Support Sentiment Alert</h3>
+        <p>This app has {{ supportInsights.length }} support-related insights with negative impact. Top issue: <strong>{{ supportInsights[0].description }}</strong></p>
+      </div>
+    </div>>-->
+    <!-- Tab Navigation -->
+    <div class="tabs">
+      <button 
+        *ngFor="let tab of ['insights', 'aspects', 'trends']"
+        [class.active]="activeTab === tab"
+        (click)="activeTab = tab"
+        class="tab-button"
+      >
+        {{ tab | uppercase }}
+      </button>
+    </div>
+
+    <!-- Insights Tab -->
+    <div *ngIf="activeTab === 'insights'" class="tab-content">
+      <h2>🎯 Top Issues (Ranked by Priority)</h2>
+      
+      <div *ngIf="insights.length > 0; else noInsights" class="insights-list">
+        <div *ngFor="let insight of insights" class="insight-card" [ngClass]="getPriorityColor(insight.priority_score)">
+          <div class="insight-header">
+            <span class="rank-badge">#{{ insight.rank }}</span>
+            <h3>{{ formatLabel(insight.category) }}</h3>
+            <span class="subcategory">{{ insight.subcategory }}</span>
+          </div>
+          
+          <div class="insight-details">
+            <p class="description">{{ insight.description }}</p>
+            <p class="insight-why">Why this matters: {{ getInsightExplanation(insight) }}</p>
+            <!-- removed example line for cleaner UI -->
+            <div class="detail-row">
+              <span><strong>Priority:</strong> {{ insight.priority_score | number:'1.0-0' }}/100</span>
+              <span><strong>Mentions:</strong> {{ insight.frequency }}</span>
+              <span><strong>Sentiment:</strong> {{ insight.sentiment_score | number:'1.2-2' }}</span>
+            </div>
+            <div class="metrics">
+              <div class="metric">
+                <span class="label">Action</span>
+                <span class="value">{{ insight.description || 'Investigate this issue and set remediation plan' }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <ng-template #noInsights>
+        <p class="no-data">No insights generated yet. Generate insights to see recommendations.</p>
+      </ng-template>
+    </div>
+
+    <!-- Aspects Tab -->
+    <div *ngIf="activeTab === 'aspects'" class="tab-content">
+      <h2>💡 Aspect Sentiment Analysis</h2>
+      
+      <div *ngIf="(aspectsSentiment | keyvalue).length > 0; else noAspects" class="aspects-grid">
+        <div *ngFor="let aspect of aspectsSentiment | keyvalue" class="aspect-card">
+          <h3>{{ formatLabel(aspect.key) }}</h3>
+          
+          <div class="aspect-chart">
+
+            <!-- Positive -->
+            <div class="bar-row">
+              <span class="label">Positive</span>
+              
+              <div class="bar-container">
+                <div class="bar positive"
+                    [style.width.%]="aspect.value.positive_width || 0">
+                </div>
+              </div>
+              
+              <span class="count">{{ aspect.value.positive }}</span>
+            </div>
+
+            <!-- Negative -->
+            <div class="bar-row">
+              <span class="label">Negative</span>
+              
+              <div class="bar-container">
+                <div class="bar negative"
+                    [style.width.%]="aspect.value.negative_width || 0">
+                </div>
+              </div>
+              
+              <span class="count">{{ aspect.value.negative }}</span>
+            </div>
+
+            <!-- Neutral -->
+            <div class="bar-row">
+              <span class="label">Neutral</span>
+              
+              <div class="bar-container">
+                <div class="bar neutral"
+                    [style.width.%]="aspect.value.neutral_width || 0">
+                </div>
+              </div>
+    
+    <span class="count">{{ aspect.value.neutral }}</span>
+  </div>
+
+</div>
+          <p class="total-mentions">Total Mentions: {{ aspect.value.total }}</p>
+        </div>
+      </div>
+      
+      <ng-template #noAspects>
+        <p class="no-data">No aspect data available yet.</p>
+      </ng-template>
+    </div>
+
+    <!-- Trends Tab -->
+    <div *ngIf="activeTab === 'trends'" class="tab-content">
+      <h2>📈 Sentiment Trends (30 Days)</h2>
+      
+      <div *ngIf="trends.length > 0; else noTrends" class="trends-container">
+        <table class="trends-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Avg Sentiment</th>
+              <th>Positive</th>
+              <th>Negative</th>
+              <th>Total Reviews</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let trend of trends">
+              <td>{{ trend.date }}</td>
+              <td class="sentiment-score">{{ trend.avg_sentiment_score | number:'1.2-2' }}</td>
+              <td class="positive">{{ trend.positive_count }}</td>
+              <td class="negative">{{ trend.negative_count }}</td>
+              <td>{{ trend.total_count }}</td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="trend-note">Trend Note: This timeline shows how your average sentiment changes over time. Look for upward sentiment and falling negative counts to confirm product improvements.</p>
+      </div>
+      
+      <ng-template #noTrends>
+        <p class="no-data">No trend data available yet.</p>
+      </ng-template>
+    </div>
+  </div>
+
+  <div *ngIf="recentReviews.length > 0" class="recent-reviews-panel">
+    <h3>Recent Ingested Reviews</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>SL</th>
+          <th>Date</th>
+          <th>Rating</th>
+          <th>Sentiment</th>
+          <th>Review ID</th>
+          <th>Snippet</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let r of recentReviews; index as i">
+          <td>{{ i + 1 }}</td>
+          <td>{{ r.timestamp | date:'short' }}</td>
+          <td>{{ r.rating }}</td>
+          <td>{{ r.sentiment }}</td>
+          <td>{{ r.review_id || '—' }}</td>
+          <td>{{ r.text | slice:0:75 }}{{ r.text.length > 75 ? '...' : '' }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div *ngIf="!loading && !stats.total_reviews" class="empty-state">
+    <p>👋 Welcome to App Review Lens</p>
+    <p>Select an app and ingest reviews to get started</p>
+  </div>
+
+  <footer class="app-footer">
+    <div class="app-footer-box">
+      <p>App Review Lens • Actionable review insights for product teams.</p>
+    </div>
+  </footer>
+</div>
+

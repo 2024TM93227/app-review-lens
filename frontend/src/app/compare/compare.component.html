@@ -1,0 +1,102 @@
+<div class="compare-page">
+<header class="app-header">
+    <div class="app-header-box">
+      <h1>App Review Lens</h1>
+      <p>High-impact product intelligence from live app reviews</p>
+    </div>
+  </header>
+
+  <div class="compare-controls">
+    <select [(ngModel)]="appA">
+      <option *ngFor="let app of monitoredApps" [value]="app.id">
+        {{ app.name }}
+      </option>
+    </select>
+
+    <select [(ngModel)]="appB">
+      <option *ngFor="let app of monitoredApps" [value]="app.id">
+        {{ app.name }}
+      </option>
+    </select>
+
+    <div class="compare-actions">
+      <button (click)="compare()">Ingest & Compare</button>
+      <button (click)="goToDashboard()" class="btn-secondary">Dashboard</button>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="status">{{ status }}</div>
+  <div *ngIf="error" class="error">❌ {{ error }}</div>
+
+  <!-- USER SIGNALS -->
+  <div *ngIf="userSignals[appA]" class="compare-summary">
+
+    <div class="card">
+      <!-- <h3>{{ getAppName(appA) }}</h3>
+
+      <p><strong>👍 Likes</strong></p>
+      <ul>
+        <li *ngFor="let p of userSignals[appA].positives">{{ p }}</li>
+      </ul>
+
+      <p><strong>👎 Complaints</strong></p>
+      <ul>
+        <li *ngFor="let n of userSignals[appA].negatives">{{ n }}</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>{{ getAppName(appB) }}</h3>
+
+      <p><strong>👍 Likes</strong></p>
+      <ul>
+        <li *ngFor="let p of userSignals[appB].positives">{{ p }}</li>
+      </ul>
+
+      <p><strong>👎 Complaints</strong></p>
+      <ul>
+        <li *ngFor="let n of userSignals[appB].negatives">{{ n }}</li>
+      </ul>
+    </div>
+
+  </div> -->
+
+  
+
+  <!-- TABLE -->
+  <div *ngIf="comparisonRows.length" class="section">
+    <h3>Aspect Comparison</h3>
+
+    <table class="nice-table">
+      <tr>
+        <th>Aspect</th>
+        <th>{{ getAppName(appA) }}</th>
+        <th>{{ getAppName(appB) }}</th>
+        <th>Winner</th>
+      </tr>
+
+      <tr *ngFor="let row of comparisonRows">
+        <td>{{ toTitleCase(row.aspect) }}</td>
+        <td class="center">{{ row.aScore | number:'1.2-2' }}</td>
+        <td class="center">{{ row.bScore | number:'1.2-2' }}</td>
+        <td class="center">{{ row.winner }}</td>
+      </tr>
+    </table>
+  </div>
+  </div>
+
+  <!-- ACTION -->
+  <div *ngIf="actionItems.length" class="section">
+    <h3>🎯 What to Fix</h3>
+    <ul>
+      <li *ngFor="let item of actionItems">{{ item }}</li>
+    </ul>
+  </div>
+  
+
+</div>
+<footer class="app-footer">
+    <div class="app-footer-box">
+      <p>App Review Lens • Actionable review insights for product teams.</p>
+    </div>
+  </footer>

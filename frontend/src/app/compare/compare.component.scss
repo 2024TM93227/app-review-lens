@@ -1,0 +1,109 @@
+.compare-page {
+  margin: 90px auto 70px;
+  padding: 1rem;
+  max-width: 1100px;
+  background: linear-gradient(135deg, #f5f7fa, #e2eaf7);
+  border-radius: 10px;
+}
+
+/* HEADER */
+.app-header, .app-footer {
+  position: fixed;
+  left: 0;
+  width: 100%;
+  text-align: center;
+  z-index: 100;
+  background: linear-gradient(135deg, #2f4fa2 0%, #1d3b7f 100%);
+  color: white;
+  border-bottom: 1px solid rgba(255,255,255,0.15);
+}
+
+.app-header { top: 0; }
+.app-footer {
+  bottom: 0;
+  height: auto;
+  padding: 0.3rem 0;
+  border-top: 1px solid rgba(255,255,255,0.15);
+}
+
+/* CONTROLS */
+.compare-controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 0.6rem;
+  margin: 1rem 0;
+}
+
+.compare-controls select,
+.compare-controls button {
+  padding: 0.5rem;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+
+/* BUTTON */
+.compare-actions button {
+  background: #2f67ff;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+/* CARDS */
+.card {
+  background: white;
+  padding: 0.8rem;
+  border-radius: 6px;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.05);
+}
+
+/* GRID */
+.compare-summary {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.8rem;
+}
+
+/* TABLE */
+.nice-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.nice-table th,
+.nice-table td {
+  border: 1px solid #ddd;
+  padding: 0.5rem;
+}
+
+.nice-table th {
+  background: #f3f5ff;
+}
+
+/* SECTION */
+.section {
+  margin-top: 1rem;
+}
+
+/* ERROR */
+.error {
+  color: red;
+}
+
+.compare-actions button {
+  flex: 1;
+}
+
+.compare-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+.center {
+  text-align: center;
+}
+
+.status {
+  margin: 0.5rem 0;
+  font-weight: 600;
+  text-align: center;
+}

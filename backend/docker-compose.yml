@@ -1,0 +1,46 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:15
+    container_name: appreviewlens_db
+    environment:
+      POSTGRES_DB: appreviewlens
+      POSTGRES_USER: appuser
+      POSTGRES_PASSWORD: apppass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U appuser -d appreviewlens"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app_network
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: appreviewlens_api
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://appuser:apppass@db:5432/appreviewlens
+      PYTHONUNBUFFERED: 1
+      LOG_LEVEL: INFO
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app_network
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+volumes:
+  postgres_data:
+
+networks:
+  app_network:
+    driver: bridge
