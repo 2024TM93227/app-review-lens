@@ -1,236 +1,173 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
-import { ApiService } from '../services/api.service';
-
-interface Insight {
-  id: number;
-  category: string;
-  subcategory: string;
-  description: string;
-  frequency: number;
-  priority_score: number;
-  rank: number;
-  sentiment_score: number;
-  status: string;
-  last_seen?: string;
-}
-
-interface AspectSentiment {
-  [key: string]: {
-    positive: number;
-    negative: number;
-    neutral: number;
-    total: number;
-    positive_width?: number;
-    negative_width?: number;
-    neutral_width?: number;
-  };
-}
+import { ActivatedRoute, Router } from '@angular/router';
+import { ApiService, DashboardResponse, IssueMetric } from '../services/api.service';
+import { Subject, takeUntil } from 'rxjs';
 
 @Component({
   selector: 'app-dashboard',
-  templateUrl: './dashboard.component.html',
-  styleUrls: ['./dashboard.component.css'],
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule]
+  imports: [CommonModule],
+  templateUrl: './dashboard.component.html',
+  styleUrls: ['./dashboard.component.scss']
 })
-export class DashboardComponent implements OnInit {
-
-  monitoredApps = [
-    { name: 'Swiggy', id: 'in.swiggy.android' },
-    { name: 'Zomato', id: 'com.application.zomato' },
-    { name: 'Uber Eats', id: 'com.ubercab.eats' },
-    { name: 'Swiggy Instamart', id: 'in.swiggy.android.instamart' }
-  ];
-
-  appId: string = this.monitoredApps[0].id;
-  insights: Insight[] = [];
-  aspectsSentiment: AspectSentiment = {};
-
-  stats: any = {};
+export class DashboardComponent implements OnInit, OnDestroy {
+  private destroy$ = new Subject<void>();
+  
+  jobId: string = '';
+  appId: string = '';
+  
+  loading = true;
+  error: string = '';
+  
+  // Dashboard data - fully initialized
+  totalReviews: number = 0;
+  avgRating: number = 0;
+  ratingChange: number = 0;
+  topIssue: IssueMetric | null = null;
+  issues: IssueMetric[] = [];
+  sentimentDistribution: { positive: number; negative: number; neutral: number } = {
+    positive: 0,
+    negative: 0,
+    neutral: 0
+  };
+  
+  // Additional dashboard sections
+  activeTab: string = 'overview';
   trends: any[] = [];
   recentReviews: any[] = [];
-  supportInsights: Insight[] = [];
+  
+  // Mock data for initial UI
+  monitoredApps = [
+    { id: 'in.swiggy.android', name: 'Swiggy' },
+    { id: 'com.application.zomato', name: 'Zomato' },
+    { id: 'com.ubercab.eats', name: 'Uber Eats' }
+  ];
+  
+  stats = {
+    total_reviews: 0,
+    avg_rating: 0,
+    rating_change: 0
+  };
 
-  infoMessage = '';
-  loading = false;
-  error = '';
-  lastRefreshed = '';
-  activeTab = 'insights';
+  constructor(
+    private route: ActivatedRoute,
+    private router: Router,
+    private api: ApiService
+  ) {}
 
-  constructor(private api: ApiService) {}
+  ngOnInit() {
+    this.route.queryParams
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(params => {
+        this.jobId = params['job'] || '';
+        
+        if (!this.jobId) {
+          this.router.navigate(['/']);
+          return;
+        }
 
-  ngOnInit(): void {
-    this.loadDashboard();
+        this.loadDashboard();
+      });
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   loadDashboard() {
-    if (!this.appId) {
-      this.error = 'Please select an app';
-      return;
-    }
-
     this.loading = true;
     this.error = '';
-    this.infoMessage = '';
-
-    // ✅ INSIGHTS
-    this.api.getInsights(this.appId).subscribe({
-      next: data => {
-        const rawInsights = data.insights || [];
-
-        // 🚫 REMOVE GENERAL + DEDUPLICATE DELIVERY
-        this.insights = rawInsights
-          .filter(i => {
-            const category = (i.category || '').toLowerCase();
-            const sub = (i.subcategory || '').toLowerCase();
-
-            return (
-              !category.includes('general') &&
-              !sub.includes('general')
-            );
-          })
-          .map(i => ({
-            ...i,
-            category: this.normalizeCategory(i)
-          }));
-
-        this.supportInsights = this.insights.filter(i =>
-          i.category.includes('support')
-        );
-
+    
+    this.api.getDashboard(this.jobId).subscribe({
+      next: (response: DashboardResponse) => {
+        this.appId = response.app_id;
+        this.totalReviews = response.total_reviews;
+        this.avgRating = response.avg_rating;
+        this.ratingChange = response.rating_change;
+        this.topIssue = response.top_issue || null;
+        this.issues = response.issues || [];
+        this.sentimentDistribution = response.review_sentiment_distribution || {
+          positive: 0,
+          negative: 0,
+          neutral: 0
+        };
+        
+        // Update stats for template
+        this.stats = {
+          total_reviews: this.totalReviews,
+          avg_rating: this.avgRating,
+          rating_change: this.ratingChange
+        };
+        
         this.loading = false;
       },
-      error: err => {
-        this.error = 'Failed to load insights';
+      error: (err) => {
+        this.error = 'Failed to load dashboard: ' + (err.error?.detail || err.message || 'Unknown error');
         this.loading = false;
       }
     });
-
-    // ✅ STATS
-    this.api.getStats(this.appId).subscribe(res => this.stats = res);
-
-    // ✅ ASPECTS
-    this.api.getAspects(this.appId).subscribe(res => {
-      this.aspectsSentiment = res.aspects || {};
-
-      Object.keys(this.aspectsSentiment).forEach(k => {
-        const v = this.aspectsSentiment[k];
-        const max = Math.max(v.positive, v.negative, v.neutral, 1);
-
-        v.positive_width = (v.positive / max) * 100;
-        v.negative_width = (v.negative / max) * 100;
-        v.neutral_width = (v.neutral / max) * 100;
-      });
-    });
-
-    // ✅ TRENDS
-    this.api.getTrends(this.appId).subscribe(res => {
-      this.trends = res.trend_data || [];
-    });
-
-    // ✅ REVIEWS
-    this.api.listReviews(this.appId, undefined, 10, 0).subscribe(res => {
-      this.recentReviews = res.reviews || [];
-      this.lastRefreshed = new Date().toLocaleTimeString();
-    });
   }
 
-  // 🔥 NORMALIZE CATEGORY (REMOVE DUPLICATES)
-  normalizeCategory(i: Insight): string {
-    const sub = (i.subcategory || '').toLowerCase();
-    const desc = (i.description || '').toLowerCase();
-
-    if (sub.includes('courier') || desc.includes('rude')) {
-      return 'delivery_agent';
+  getSeverityStyle(severity: string): string {
+    switch(severity) {
+      case 'critical': return 'critical';
+      case 'high': return 'high';
+      case 'medium': return 'medium';
+      default: return 'low';
     }
-
-    if (sub.includes('parcel') || desc.includes('missing')) {
-      return 'delivery_order';
-    }
-
-    if (desc.includes('late') || desc.includes('delay')) {
-      return 'delivery_speed';
-    }
-
-    return (i.category || '').toLowerCase();
   }
 
-  // 🔥 MAIN EXPLANATION ENGINE
-  getInsightExplanation(insight: Insight): string {
-    const desc = (insight.description || '').toLowerCase();
-    const cat = (insight.category || '').toLowerCase();
-
-    // 🚚 DELIVERY AGENT
-    if (cat === 'delivery_agent') {
-      return `Users are reporting negative experiences with delivery agents such as rude behaviour, lack of professionalism, or poor communication. This impacts trust and overall customer satisfaction.`;
-    }
-
-    // 📦 ORDER ISSUES
-    if (cat === 'delivery_order') {
-      return `Users are facing issues with order accuracy like missing items, wrong deliveries, or damaged packages. This directly affects customer trust and repeat usage.`;
-    }
-
-    // ⏱ DELIVERY SPEED
-    if (cat === 'delivery_speed') {
-      return `Users are experiencing delays in delivery such as late arrivals or long waiting times. This is a critical issue as it directly affects user satisfaction and retention.`;
-    }
-
-    // 💥 BUGS
-    if (desc.includes('crash') || desc.includes('bug')) {
-      return `Users are encountering app crashes or technical bugs, leading to a broken user experience and potential drop-offs.`;
-    }
-
-    // 💳 PAYMENT
-    if (desc.includes('payment')) {
-      return `Users are facing issues during payment such as failed transactions or checkout friction, which directly impacts revenue.`;
-    }
-
-    // 🍽 QUALITY
-    if (desc.includes('quality') || desc.includes('food')) {
-      return `Users are unhappy with the quality of the product or service, which affects brand perception and repeat usage.`;
-    }
-
-    // 🛎 SUPPORT
-    if (cat.includes('support')) {
-      return `Users are dissatisfied with customer support responsiveness or issue resolution, leading to frustration and churn.`;
-    }
-
-    // ❌ NO GENERIC "GENERAL" ANYMORE
-    return `This issue is being reported by multiple users and requires deeper analysis to identify the root cause and improve user experience.`;
+  getTrendArrow(trend: number): string {
+    if (trend > 0) return '📈 +' + trend.toFixed(1);
+    if (trend < 0) return '📉 ' + trend.toFixed(1);
+    return '➡️ 0';
   }
 
-  // 🎨 PRIORITY COLOR
-  getPriorityColor(score: number): string {
-    if (score > 70) return 'critical';
-    if (score > 50) return 'high';
-    if (score > 30) return 'medium';
-    return 'low';
+  getSentimentPercentage(label: string): number {
+    const total = this.totalReviews;
+    const count = this.sentimentDistribution[label as keyof typeof this.sentimentDistribution] || 0;
+    return total > 0 ? Math.round((count / total) * 100) : 0;
   }
 
-  // 🔄 ACTIONS
+  goBack() {
+    this.router.navigate(['/']);
+  }
+
   ingestReviews() {
-    this.loading = true;
-    this.api.ingestReviews(this.appId).subscribe(() => this.loadDashboard());
+    // Placeholder for ingest functionality
+    console.log('Ingest reviews for', this.appId);
   }
 
   generateInsights() {
-    this.loading = true;
-    this.api.generateInsights(this.appId).subscribe(() => this.loadDashboard());
+    // Placeholder for insights generation
+    console.log('Generate insights for', this.appId);
   }
 
-  refreshDashboard() {
-    this.loadDashboard();
+  viewIssueDetails(issueId: number) {
+    // Navigate to issue deep dive
+    this.router.navigate(['/issue-detail'], {
+      queryParams: { job: this.jobId, issue: issueId }
+    });
   }
 
-  formatLabel(label: string): string {
-    if (!label) return '';
+  setActiveTab(tab: string) {
+    this.activeTab = tab;
+    if (tab === 'trends') {
+      this.loadTrends();
+    } else if (tab === 'reviews') {
+      this.loadRecentReviews();
+    }
+  }
 
-    return label
-      .replace(/_/g, ' ')                 // replace underscore with space
-      .toLowerCase()                     // normalize
-      .replace(/\b\w/g, char => char.toUpperCase()); // capitalize each word
+  loadTrends() {
+    // Load trend data (placeholder)
+    this.trends = [];
+  }
+
+  loadRecentReviews() {
+    // Load recent reviews (placeholder)
+    this.recentReviews = [];
   }
 }

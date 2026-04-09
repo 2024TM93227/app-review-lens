@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean, JSON, Text
+from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean, JSON, Text, Index
 from datetime import datetime
 
 
@@ -49,6 +49,14 @@ class Review(Base):
     is_processed = Column(Boolean, default=False, index=True)
     processing_status = Column(String, default="pending")  # pending, processed, error
     raw_data = Column(JSON, nullable=True)  # Original Play Store data
+
+    # Table-level constraints and indices for query optimization
+    __table_args__ = (
+        Index('ix_review_app_category_time', 'app_id', 'domain_category', 'timestamp'),  # For dashboard analysis
+        Index('ix_review_sentiment_app', 'app_id', 'sentiment', 'timestamp'),  # For sentiment trends
+        Index('ix_review_app_spam', 'app_id', 'is_spam'),  # For filtering spam
+        Index('ix_review_domain_category', 'domain_category', 'domain_subcategory'),  # For issue grouping
+    )
 
 
 class AspectSentiment(Base):

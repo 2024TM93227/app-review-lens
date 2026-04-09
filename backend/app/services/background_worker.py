@@ -3,7 +3,7 @@ Background Worker for Real-Time Review Collection
 Periodically ingests reviews from Google Play Store using APScheduler
 """
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import List
 
 try:
@@ -47,7 +47,8 @@ def ingest_app_reviews(app_id: str, app_name: str):
         logger.info(f"[Background Worker] Starting real-time ingest for {app_name} ({app_id})")
         
         # Fetch reviews from last 1 day
-        reviews_data = fetch_reviews_incremental(app_id, days=1)
+        since_date = datetime.now() - timedelta(days=1)
+        reviews_data = fetch_reviews_incremental(app_id, since_date=since_date, max_reviews=100)
         
         if not reviews_data:
             logger.debug(f"[Background Worker] No new reviews for {app_name}")

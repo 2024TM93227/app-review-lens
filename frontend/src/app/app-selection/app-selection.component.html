@@ -1,0 +1,85 @@
+<div class="app-selection-container">
+  <!-- Header -->
+  <div class="header">
+    <h1>App Review Lens</h1>
+    <p class="subtitle">Decision-First Product Analytics</p>
+  </div>
+
+  <!-- Mode Selector -->
+  <div class="mode-selector">
+    <button 
+      [class.active]="mode === 'single'"
+      (click)="switchToCompare()"
+      class="mode-btn">
+      {{ mode === 'single' ? 'Analyze Single App' : 'Compare 2 Apps' }}
+    </button>
+  </div>
+
+  <!-- Search -->
+  <div class="search-section">
+    <input 
+      [(ngModel)]="searchQuery" 
+      (keyup)="loadApps()"
+      type="text" 
+      placeholder="Search apps..."
+      class="search-input">
+  </div>
+
+  <!-- Error -->
+  <div *ngIf="error" class="error-banner">
+    {{ error }}
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="loading">
+    <div class="spinner"></div>
+    <p>Loading apps...</p>
+  </div>
+
+  <!-- Apps Grid -->
+  <div *ngIf="!loading" class="apps-grid">
+    <div 
+      *ngFor="let app of apps"
+      (click)="toggleApp(app.app_id)"
+      [class.selected]="isSelected(app.app_id)"
+      class="app-card">
+      
+      <div class="app-info no-icon">
+        <h3>{{ app.name }}</h3>
+        <div class="app-meta">
+          <span class="rating">⭐ {{ app.rating }}</span>
+          <span class="reviews">{{ app.review_count | number: '0.0-0' }}</span>
+        </div>
+      </div>
+      
+      <div class="checkbox">
+        <input 
+          type="checkbox" 
+          [checked]="isSelected(app.app_id)"
+          (change)="toggleApp(app.app_id)">
+      </div>
+    </div>
+  </div>
+
+  <!-- Selection Count -->
+  <div class="selection-info">
+    <p>
+      <span *ngIf="mode === 'single'">
+        {{ selectedApps.length === 0 ? 'Select 1 app' : 'Selected: ' + selectedApps.length }}
+      </span>
+      <span *ngIf="mode === 'compare'">
+        {{ selectedApps.length === 0 ? 'Select 2 apps to compare' : 'Selected: ' + selectedApps.length + '/2' }}
+      </span>
+    </p>
+  </div>
+
+  <!-- Action Buttons -->
+  <div class="action-buttons">
+    <button 
+      (click)="proceed()"
+      [disabled]="selectedApps.length === 0"
+      class="btn-primary">
+      {{ mode === 'single' ? 'Analyse Reviews' : 'Compare Reviews' }}
+    </button>
+  </div>
+</div>

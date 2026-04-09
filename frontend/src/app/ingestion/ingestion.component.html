@@ -1,0 +1,81 @@
+<div class="ingestion-container">
+  <div class="content-wrapper">
+    <!-- Error Banner -->
+    <div *ngIf="error" class="error-banner">
+      <h3>⚠️ Error</h3>
+      <p>{{ error }}</p>
+    </div>
+
+    <!-- Before starting ingestion: show start button -->
+    <div *ngIf="!loading && !jobId && !error" class="start-state">
+      <div class="header">
+        <h1>Ready to Ingest Reviews</h1>
+        <p class="subtitle">Click to start fetching and analysing recent reviews.</p>
+      </div>
+
+      <div class="controls">
+        <label>Max reviews to fetch:</label>
+        <select [(ngModel)]="maxReviews">
+          <option [ngValue]="100">100 (Fast)</option>
+          <option [ngValue]="200">200 (Balanced)</option>
+          <option [ngValue]="500">500 (Thorough)</option>
+        </select>
+      </div>
+
+      <div class="action-buttons">
+        <button class="btn-primary" (click)="startIngestion()">Start Ingestion</button>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="loading" class="loading-state">
+      <!-- Header -->
+      <div class="header">
+        <h1>Ingesting Reviews</h1>
+        <p class="subtitle">{{ message }}</p>
+      </div>
+
+      <!-- Main Spinner -->
+      <div class="central-spinner">
+        <div class="spinner-ring">
+          <svg viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="40" />
+          </svg>
+        </div>
+        <div class="progress-text">
+          <span class="percentage">{{ progress | number: '0.0-0' }}%</span>
+        </div>
+      </div>
+
+      <!-- Progress Bar -->
+      <div class="progress-bar-container">
+        <div class="progress-bar" [style.width.%]="progress"></div>
+      </div>
+
+      <!-- Steps -->
+      <div class="steps-container">
+        <div *ngFor="let step of steps; let i = index" 
+             [class.active]="i <= getCurrentStep()"
+             [class.complete]="i < getCurrentStep()"
+             class="step">
+          <div class="step-icon">{{ step.icon }}</div>
+          <div class="step-name">{{ step.name }}</div>
+          <div *ngIf="i < getCurrentStep()" class="checkmark">✓</div>
+        </div>
+      </div>
+
+      <!-- Message -->
+      <div class="status-message">
+        <p>{{ message }}</p>
+      </div>
+    </div>
+
+    <!-- Success State -->
+    <div *ngIf="!loading && !error && jobId" class="success-state">
+      <div class="checkmark-large">✓</div>
+      <h2>Ingestion Complete!</h2>
+      <p>Reviews have been processed and analysed.</p>
+      <p class="redirect-text">Redirecting to dashboard...</p>
+    </div>
+  </div>
+</div>
