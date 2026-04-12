@@ -67,7 +67,7 @@ def ingest_reviews(app_id: str, country: str = "us", lang: str = "en", count: in
                 # 🔥 UPDATE EXISTING (instead of skipping)
                 if existing:
                     existing.text = text
-                    existing.sentiment, existing.sentiment_score = analyze_sentiment_v2(text)
+                    existing.sentiment, existing.sentiment_score = analyze_sentiment_v2(text, rating=existing.rating)
                     existing.issue_category = classify_issue(text)
                     existing.severity = calculate_severity(existing.rating or 3, existing.sentiment_score, text)
                     existing.timestamp = timestamp
@@ -78,7 +78,7 @@ def ingest_reviews(app_id: str, country: str = "us", lang: str = "en", count: in
                 cleaned_text = preprocess_text(text)
                 preprocessed_text = preprocess_review(text)
                 is_spam = detect_spam(text)
-                sentiment_label, sentiment_score = analyze_sentiment_v2(text)
+                sentiment_label, sentiment_score = analyze_sentiment_v2(text, rating=review_data.get("score"))
                 aspects = extract_aspects(text)
                 domain_category, domain_subcategory = classify_domain_category(text)
                 issue_category = classify_issue(text)

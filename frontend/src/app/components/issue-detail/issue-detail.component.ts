@@ -129,7 +129,7 @@ const HIGHLIGHT_KEYWORDS = [
                   Severity: {{ review.severity | number:'1.1-1' }}
                 </span>
                 <span class="review-date" *ngIf="review.timestamp">
-                  {{ review.timestamp | date:'mediumDate' }}
+                  {{ review.timestamp | date:'MMM d, y h:mm a' }}
                 </span>
                 <span class="review-version" *ngIf="review.app_version">
                   v{{ review.app_version }}

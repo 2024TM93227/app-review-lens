@@ -20,7 +20,7 @@
       <button (click)="ingestReviews()" class="btn btn-secondary" [disabled]="loading">
         📥 Ingest Reviews
       </button>
-      <button routerLink="/compare" class="btn btn-primary" style="background:#7158e2;">
+      <button [routerLink]="['/compare']" [queryParams]="{ appA: appId }" class="btn btn-primary" style="background:#7158e2;">
         📊 Compare Apps
       </button>
     </div>
@@ -143,7 +143,7 @@
             <tr *ngFor="let r of (showAllReviews ? recentReviews : (recentReviews | slice:0:10)); index as i"
                 [ngClass]="getSeverityClass(r.severity)">
               <td>{{ i + 1 }}</td>
-              <td>{{ r.timestamp | date:'shortDate' }}</td>
+              <td>{{ r.timestamp | date:'MMM d, y h:mm a' }}</td>
               <td>
                 <span [ngClass]="{'rating-bad': r.rating <= 2, 'rating-ok': r.rating === 3, 'rating-good': r.rating >= 4}">
                   {{ r.rating }} ★

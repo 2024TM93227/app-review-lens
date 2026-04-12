@@ -13,6 +13,10 @@ STRONG_NEGATIVE_KEYWORDS = [
     "scam", "fraud", "cheat", "dangerous", "unacceptable", "pathetic",
     "useless", "hate", "disaster", "nightmare", "awful", "rubbish",
     "trash", "zero", "impossible", "furious", "outrageous",
+    "disappointed", "frustrating", "broken", "crash", "freeze",
+    "overcharged", "steal", "stealing", "rude", "ignored", "garbage",
+    "unusable", "uninstall", "avoid", "regret", "ridiculous",
+    "waste", "delayed", "cold", "stale", "missing", "wrong",
 ]
 
 

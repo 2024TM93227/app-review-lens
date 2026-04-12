@@ -196,9 +196,19 @@ export class DashboardComponent implements OnInit {
     return 'sev-low';
   }
 
-  /** Re-derive sentiment from the 0-1 sentiment_score to fix label mismatches */
+  /** Re-derive sentiment from the 0-1 sentiment_score, corrected by star rating */
   private deriveSentiment(review: any): string {
     const score = review.sentiment_score;
+    const rating = review.rating;
+
+    // Rating override: low ratings should never show as positive
+    if (typeof rating === 'number') {
+      if (rating <= 2) return 'negative';
+      if (rating === 3) {
+        if (typeof score === 'number' && score > 0.6) return 'neutral';
+      }
+    }
+
     if (typeof score === 'number') {
       if (score < 0.4) return 'negative';
       if (score > 0.6) return 'positive';
