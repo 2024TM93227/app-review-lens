@@ -6,6 +6,7 @@ from app.db.base import Base
 from app.db.session import engine
 from app.api import reviews, insights, compare
 from app.api import ai
+from app.api import insights_v2
 from app.services.background_worker import start_background_scheduler, stop_background_scheduler, is_scheduler_running
 
 logger = logging.getLogger(__name__)
@@ -25,6 +26,7 @@ app.include_router(reviews.router, prefix="/reviews")
 app.include_router(insights.router, prefix="/insights")
 app.include_router(compare.router, prefix="/compare")
 app.include_router(ai.router, prefix="/ai")
+app.include_router(insights_v2.router, prefix="/v2/insights")
 
 
 @app.on_event("startup")
@@ -55,7 +57,7 @@ def health_detailed():
     return {
         "status": "running",
         "service": "App Review Lens",
-        "version": "1.0.0",
+        "version": "2.0.0",
         "background_worker": "active" if is_scheduler_running() else "inactive",
         "components": {
             "database": "connected",

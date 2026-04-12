@@ -15,6 +15,10 @@ from app.services.nlp import (
     preprocess_text,
     detect_spam
 )
+from app.services.classification import classify_issue
+from app.services.sentiment import analyze_sentiment_v2
+from app.services.severity import calculate_severity
+from app.services.preprocessing import preprocess_review
 from app.db.session import SessionLocal
 from app.models.review import Review, AspectSentiment
 from app.services.trends import build_sentiment_trend
@@ -63,17 +67,22 @@ def ingest_reviews(app_id: str, country: str = "us", lang: str = "en", count: in
                 # 🔥 UPDATE EXISTING (instead of skipping)
                 if existing:
                     existing.text = text
-                    existing.sentiment, existing.sentiment_score = analyze_sentiment(text)
+                    existing.sentiment, existing.sentiment_score = analyze_sentiment_v2(text)
+                    existing.issue_category = classify_issue(text)
+                    existing.severity = calculate_severity(existing.rating or 3, existing.sentiment_score, text)
                     existing.timestamp = timestamp
                     updated += 1
                     continue
 
                 # New review processing
                 cleaned_text = preprocess_text(text)
+                preprocessed_text = preprocess_review(text)
                 is_spam = detect_spam(text)
-                sentiment_label, sentiment_score = analyze_sentiment(text)
+                sentiment_label, sentiment_score = analyze_sentiment_v2(text)
                 aspects = extract_aspects(text)
                 domain_category, domain_subcategory = classify_domain_category(text)
+                issue_category = classify_issue(text)
+                severity_score = calculate_severity(review_data.get("score", 3), sentiment_score, text)
 
                 review_record = Review(
                     app_id=app_id,
@@ -91,6 +100,8 @@ def ingest_reviews(app_id: str, country: str = "us", lang: str = "en", count: in
                     aspects=aspects,
                     domain_category=domain_category,
                     domain_subcategory=domain_subcategory,
+                    issue_category=issue_category,
+                    severity=severity_score,
                     is_spam=is_spam,
                     is_processed=True,
                     processing_status="processed",
@@ -141,6 +152,9 @@ def ingest_reviews(app_id: str, country: str = "us", lang: str = "en", count: in
 def list_reviews(
     app_id: str,
     sentiment: Optional[str] = None,
+    issue_category: Optional[str] = None,
+    rating: Optional[int] = None,
+    days: Optional[int] = None,
     is_spam: bool = False,
     limit: int = 50,
     offset: int = 0
@@ -154,6 +168,13 @@ def list_reviews(
 
         if sentiment:
             query = query.filter(Review.sentiment == sentiment)
+        if issue_category:
+            query = query.filter(Review.issue_category == issue_category)
+        if rating:
+            query = query.filter(Review.rating == rating)
+        if days:
+            cutoff = datetime.now() - timedelta(days=days)
+            query = query.filter(Review.timestamp >= cutoff)
 
         total = query.count()
 
@@ -170,6 +191,9 @@ def list_reviews(
                     "text": r.text,
                     "sentiment": r.sentiment,
                     "sentiment_score": r.sentiment_score,
+                    "issue_category": r.issue_category,
+                    "severity": r.severity,
+                    "app_version": r.app_version,
                     "timestamp": r.timestamp.isoformat() if r.timestamp else None
                 }
                 for r in reviews

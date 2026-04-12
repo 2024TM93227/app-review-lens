@@ -1,41 +1,37 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule, KeyValue } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { ApiService } from '../services/api.service';
 import { SentimentChartComponent } from '../components/sentiment-chart.component';
-
-interface Insight {
-  id: number;
-  category: string;
-  subcategory: string;
-  description: string;
-  frequency: number;
-  priority_score: number;
-  rank: number;
-  sentiment_score: number;
-  status: string;
-  last_seen?: string;
-}
-
-interface AspectSentiment {
-  [key: string]: {
-    positive: number;
-    negative: number;
-    neutral: number;
-    total: number;
-    positive_width?: number;
-    negative_width?: number;
-    neutral_width?: number;
-  };
-}
+import { SummaryCardComponent } from '../components/summary-card/summary-card.component';
+import { IssueListComponent } from '../components/issue-list/issue-list.component';
+import { AlertsPanelComponent } from '../components/alerts/alerts-panel.component';
+import { ChartsComponent } from '../components/charts/charts.component';
+import { FiltersComponent, FilterState } from '../components/filters/filters.component';
+import {
+  InsightsV2Response,
+  TopIssue,
+  Alert,
+  RatingTrendPoint,
+} from '../models/insights.model';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css'],
-  imports: [CommonModule, FormsModule, RouterModule, SentimentChartComponent]
+  imports: [
+    CommonModule,
+    FormsModule,
+    RouterModule,
+    SentimentChartComponent,
+    SummaryCardComponent,
+    IssueListComponent,
+    AlertsPanelComponent,
+    ChartsComponent,
+    FiltersComponent,
+  ]
 })
 export class DashboardComponent implements OnInit {
 
@@ -48,34 +44,28 @@ export class DashboardComponent implements OnInit {
 
   appId: string = this.monitoredApps[0].id;
 
-  insights: Insight[] = [];
-  aspectsSentiment: AspectSentiment = {};
+  // V2 data
+  topIssues: TopIssue[] = [];
+  alerts: Alert[] = [];
+  ratingTrend: RatingTrendPoint[] = [];
+  totalReviews = 0;
 
+  // V1 data (kept for sentiment chart)
   stats: any = {};
-  trends: any[] = [];
   recentReviews: any[] = [];
-  supportInsights: Insight[] = [];
+  sentimentData = { positive: 0, negative: 0, neutral: 0 };
 
-  loading: boolean = false;
-  error: string = '';
-  infoMessage: string = '';
-  lastRefreshed: string = '';
-  activeTab: string = 'insights';
+  // Filters
+  currentFilters: FilterState = { days: 30, rating: null, sentiment: null };
 
-  sentimentData = {
-    positive: 0,
-    negative: 0,
-    neutral: 0
-  };
+  loading = false;
+  error = '';
+  infoMessage = '';
+  lastRefreshed = '';
+  showAllReviews = false;
+  activeTab: 'overview' | 'reviews' = 'overview';
 
-  showAllReviews: boolean = false;
-
-  // 🔥 NEW METRICS
-  avgSentimentScore: number = 0;
-  confidenceScore: number = 0;
-  trendDirection: string = 'Stable ➖';
-
-  constructor(private api: ApiService) {}
+  constructor(private api: ApiService, private router: Router) {}
 
   ngOnInit(): void {
     this.loadDashboard();
@@ -91,27 +81,13 @@ export class DashboardComponent implements OnInit {
     this.error = '';
     this.infoMessage = '';
 
-    // ✅ INSIGHTS
-    this.api.getInsights(this.appId).subscribe({
-      next: data => {
-        const rawInsights = data.insights || [];
-
-        this.insights = rawInsights
-          .filter((i: Insight) => {
-            const category = (i.category || '').toLowerCase();
-            const sub = (i.subcategory || '').toLowerCase();
-
-            return !category.includes('general') && !sub.includes('general');
-          })
-          .map((i: Insight) => ({
-            ...i,
-            category: this.normalizeCategory(i)
-          }));
-
-        this.supportInsights = this.insights.filter(i =>
-          i.category.includes('support')
-        );
-
+    // V2: Load insights
+    this.api.getInsightsV2(this.appId, this.currentFilters.days).subscribe({
+      next: (data: InsightsV2Response) => {
+        this.topIssues = data.top_issues || [];
+        this.alerts = data.alerts || [];
+        this.ratingTrend = data.rating_trend || [];
+        this.totalReviews = data.total_reviews || 0;
         this.loading = false;
       },
       error: () => {
@@ -120,142 +96,53 @@ export class DashboardComponent implements OnInit {
       }
     });
 
-    // ✅ STATS + AVG SCORE
+    // V1: Stats for sentiment chart
     this.api.getStats(this.appId).subscribe(res => {
       this.stats = res;
-
-      const pos = res?.sentiment_distribution?.positive || 0;
-      const neg = res?.sentiment_distribution?.negative || 0;
-      const neu = res?.sentiment_distribution?.neutral || 0;
-
-      const total = pos + neg + neu;
-
-      const score = (pos * 1 + neu * 0.5 + neg * 0);
-
-      this.avgSentimentScore = total ? score / total : 0;
-
       this.sentimentData = {
-        positive: pos,
-        negative: neg,
-        neutral: neu
+        positive: res?.sentiment_distribution?.positive || 0,
+        negative: res?.sentiment_distribution?.negative || 0,
+        neutral: res?.sentiment_distribution?.neutral || 0,
       };
     });
 
-    // ✅ ASPECTS
-    this.api.getAspects(this.appId).subscribe(res => {
-      this.aspectsSentiment = res.aspects || {};
-
-      Object.keys(this.aspectsSentiment).forEach(k => {
-        const v = this.aspectsSentiment[k];
-        const max = Math.max(v.positive, v.negative, v.neutral, 1);
-
-        v.positive_width = (v.positive / max) * 100;
-        v.negative_width = (v.negative / max) * 100;
-        v.neutral_width = (v.neutral / max) * 100;
-      });
-    });
-
-    // ✅ TRENDS
-    this.api.getTrends(this.appId).subscribe(res => {
-      this.trends = res.trend_data || [];
-
-      if (this.trends.length >= 2) {
-        const latest = this.trends[this.trends.length - 1].avg_sentiment_score;
-        const previous = this.trends[this.trends.length - 2].avg_sentiment_score;
-
-        if (latest > previous + 0.05) {
-          this.trendDirection = 'Improving 📈';
-        } else if (latest < previous - 0.05) {
-          this.trendDirection = 'Declining 📉';
-        } else {
-          this.trendDirection = 'Stable ➖';
-        }
-      }
-    });
-
-    // ✅ REVIEWS
-    this.api.listReviews(this.appId, undefined, 50, 0).subscribe(res => {
+    // Reviews (with V2 filters)
+    this.api.listReviews(
+      this.appId,
+      this.currentFilters.sentiment || undefined,
+      50,
+      0,
+      undefined,
+      this.currentFilters.rating || undefined,
+      this.currentFilters.days || undefined,
+    ).subscribe(res => {
       this.recentReviews = res.reviews || [];
       this.lastRefreshed = new Date().toLocaleTimeString();
     });
-
-    // ✅ CONFIDENCE (delay to ensure stats loaded)
-    setTimeout(() => {
-      this.calculateConfidence();
-    }, 500);
   }
 
-  // 🔥 CONFIDENCE SCORE
-  calculateConfidence() {
-    const total = this.stats?.total_reviews || 0;
-
-    if (total === 0) {
-      this.confidenceScore = 0;
-      return;
-    }
-
-    const variance = Math.abs(
-      (this.sentimentData.positive || 0) -
-      (this.sentimentData.negative || 0)
-    );
-
-    const normalizedVariance = variance / total;
-
-    this.confidenceScore = Math.min(
-      100,
-      Math.round((total / 50) * 50 + (1 - normalizedVariance) * 50)
-    );
+  onFiltersChanged(filters: FilterState) {
+    this.currentFilters = filters;
+    this.loadDashboard();
   }
 
-  // 🔥 CATEGORY NORMALIZATION
-  normalizeCategory(i: Insight): string {
-    const sub = (i.subcategory || '').toLowerCase();
-    const desc = (i.description || '').toLowerCase();
-
-    if (sub.includes('courier') || desc.includes('rude')) return 'delivery_agent';
-    if (sub.includes('parcel') || desc.includes('missing')) return 'delivery_order';
-    if (desc.includes('late') || desc.includes('delay')) return 'delivery_speed';
-
-    return (i.category || '').toLowerCase();
-  }
-
-  // 🔥 EXPLANATION
-  getInsightExplanation(insight: Insight): string {
-    const desc = (insight.description || '').toLowerCase();
-    const cat = (insight.category || '').toLowerCase();
-
-    if (cat === 'delivery_agent') return 'Delivery agent behavior affecting trust.';
-    if (cat === 'delivery_order') return 'Incorrect/missing orders impacting reliability.';
-    if (cat === 'delivery_speed') return 'Delivery delays hurting satisfaction.';
-    if (desc.includes('crash')) return 'App crashes degrade experience.';
-    if (desc.includes('payment')) return 'Payment issues affect revenue.';
-    if (cat.includes('support')) return 'Support issues causing frustration.';
-
-    return 'Recurring issue needing investigation.';
-  }
-
-  // 🎨 PRIORITY
-  getPriorityColor(score: number): string {
-    if (score > 70) return 'critical';
-    if (score > 50) return 'high';
-    if (score > 30) return 'medium';
-    return 'low';
-  }
-
-  // 🔄 ACTIONS
-  ingestReviews() {
-    this.loading = true;
-    this.api.ingestReviews(this.appId).subscribe(() => {
-      this.infoMessage = 'Reviews ingested successfully';
-      this.loadDashboard();
+  navigateToIssue(issueName: string) {
+    this.router.navigate(['/issues', this.appId, issueName], {
+      queryParams: { days: this.currentFilters.days }
     });
   }
 
-  generateInsights() {
+  ingestReviews() {
     this.loading = true;
-    this.api.generateInsights(this.appId).subscribe(() => {
-      this.infoMessage = 'Insights generated successfully';
-      this.loadDashboard();
+    this.api.ingestReviews(this.appId).subscribe({
+      next: () => {
+        this.infoMessage = 'Reviews ingested successfully';
+        this.loadDashboard();
+      },
+      error: () => {
+        this.error = 'Failed to ingest reviews';
+        this.loading = false;
+      }
     });
   }
 
@@ -263,15 +150,17 @@ export class DashboardComponent implements OnInit {
     this.showAllReviews = !this.showAllReviews;
   }
 
-  // 🧠 LABEL FORMAT
   formatLabel(label: string): string {
-    return label
-      ?.replace(/_/g, ' ')
-      .toLowerCase()
+    return (label || '')
+      .replace(/_/g, ' ')
       .replace(/\b\w/g, c => c.toUpperCase());
   }
 
-  trackByKey(index: number, item: KeyValue<string, any>) {
-    return item.key;
+  getSeverityClass(severity: number): string {
+    if (!severity) return 'sev-low';
+    if (severity > 7) return 'sev-critical';
+    if (severity > 5) return 'sev-high';
+    if (severity > 3) return 'sev-medium';
+    return 'sev-low';
   }
 }

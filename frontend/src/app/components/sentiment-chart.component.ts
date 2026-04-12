@@ -56,20 +56,6 @@ Chart.register(...registerables);
       </div>
 
       <!-- Sentiment Metadata -->
-      <div class="sentiment-metadata">
-        <div class="metadata-item">
-          <span class="label">Avg Score:</span>
-          <span class="value">{{ sentimentData.average_score | number:'1.2-2' }}/1.0</span>
-        </div>
-        <div class="metadata-item">
-          <span class="label">Confidence:</span>
-          <span class="value">{{ (sentimentData.confidence * 100) | number:'1.0-0' }}%</span>
-        </div>
-        <div class="metadata-item">
-          <span class="label">Trend:</span>
-          <span class="value" [class]="sentimentData.trend">{{ sentimentData.trend | uppercase }}</span>
-        </div>
-      </div>
 
       <!-- Intelligence Note -->
       <div *ngIf="sentimentData.corrected_count > 0" class="intelligence-note">

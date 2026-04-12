@@ -35,6 +35,8 @@ class Review(Base):
     topic = Column(String, nullable=True)
     domain_category = Column(String, nullable=True)  # Delivery, Order, Payments, App, Support
     domain_subcategory = Column(String, nullable=True)  # Delay, Accuracy, Crash, etc.
+    issue_category = Column(String, nullable=True, index=True)  # V2: delivery_time, food_quality, etc.
+    severity = Column(Float, nullable=True)  # V2: severity score 0-10
     
     # Embeddings & Clustering
     embedding = Column(JSON, nullable=True)  # Vector for similarity/clustering

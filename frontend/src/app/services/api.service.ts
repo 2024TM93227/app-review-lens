@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { InsightsV2Response, IssueDetailResponse, Alert } from '../models/insights.model';
 
 @Injectable({
   providedIn: 'root'
@@ -11,7 +12,21 @@ export class ApiService {
 
   constructor(private http: HttpClient) {}
 
-  // Insights endpoints
+  // ========== V2 Insights Endpoints ==========
+
+  getInsightsV2(appId: string, days: number = 30): Observable<InsightsV2Response> {
+    return this.http.get<InsightsV2Response>(`${this.baseUrl}/v2/insights/${appId}?days=${days}`);
+  }
+
+  getIssueDetail(appId: string, issueName: string, days: number = 30): Observable<IssueDetailResponse> {
+    return this.http.get<IssueDetailResponse>(`${this.baseUrl}/v2/insights/${appId}/issues/${issueName}?days=${days}`);
+  }
+
+  getAlerts(appId: string): Observable<{ app_id: string; alerts: Alert[] }> {
+    return this.http.get<{ app_id: string; alerts: Alert[] }>(`${this.baseUrl}/v2/insights/${appId}/alerts`);
+  }
+
+  // ========== V1 Insights Endpoints ==========
   getInsights(appId: string): Observable<any> {
     return this.http.get(`${this.baseUrl}/insights/${appId}`);
   }
@@ -40,11 +55,12 @@ export class ApiService {
     );
   }
 
-  listReviews(appId: string, sentiment?: string, limit: number = 50, offset: number = 0): Observable<any> {
+  listReviews(appId: string, sentiment?: string, limit: number = 50, offset: number = 0, issueCategory?: string, rating?: number, days?: number): Observable<any> {
     let url = `${this.baseUrl}/reviews/app/${appId}/list?limit=${limit}&offset=${offset}`;
-    if (sentiment) {
-      url += `&sentiment=${sentiment}`;
-    }
+    if (sentiment) url += `&sentiment=${sentiment}`;
+    if (issueCategory) url += `&issue_category=${issueCategory}`;
+    if (rating) url += `&rating=${rating}`;
+    if (days) url += `&days=${days}`;
     return this.http.get(url);
   }
 

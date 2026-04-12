@@ -1,9 +1,13 @@
 """
-Prioritization Engine: Score and rank issues by impact
+Prioritization Engine: Score and rank issues by impact (V2 enhanced)
 """
 from typing import Dict, List
+from collections import defaultdict
 from datetime import datetime, timedelta
 import logging
+
+from app.services.severity import calculate_severity
+from app.services.classification import classify_issue, get_all_categories
 
 logger = logging.getLogger(__name__)
 
@@ -194,3 +198,107 @@ def calculate_std(values: List[float]) -> float:
     mean = sum(values) / len(values)
     variance = sum((x - mean) ** 2 for x in values) / len(values)
     return variance ** 0.5
+
+
+# =============================================
+# V2: Aggregated issue prioritization
+# =============================================
+
+def aggregate_issues(reviews: List[Dict]) -> List[Dict]:
+    """
+    Aggregate reviews into prioritized issue categories.
+
+    For each category computes:
+      - frequency (count)
+      - average severity
+      - average sentiment score
+      - average rating
+      - weighted impact score
+      - trend (up / down / stable) comparing recent 7d vs previous 7d
+      - affected_users percentage
+      - example_reviews (up to 3)
+
+    Returns sorted list of issue dicts (highest impact first).
+    """
+    now = datetime.now()
+    total_reviews = len(reviews)
+    if total_reviews == 0:
+        return []
+
+    buckets: Dict[str, List[Dict]] = defaultdict(list)
+
+    for r in reviews:
+        cat = r.get("issue_category") or classify_issue(r.get("text", ""))
+        if cat and cat != "uncategorized":
+            buckets[cat].append(r)
+
+    issues = []
+    for cat in get_all_categories():
+        cat_reviews = buckets.get(cat, [])
+        if not cat_reviews:
+            continue
+
+        freq = len(cat_reviews)
+        sentiments = [r.get("sentiment_score", 0.5) for r in cat_reviews]
+        ratings = [r.get("rating", 3) for r in cat_reviews]
+        severities = [
+            calculate_severity(r.get("rating", 3), r.get("sentiment_score", 0.5), r.get("text", ""))
+            for r in cat_reviews
+        ]
+
+        avg_severity = sum(severities) / freq
+        avg_sentiment = sum(sentiments) / freq
+        avg_rating = sum(ratings) / freq
+
+        # Weighted impact: frequency_norm * 0.5 + avg_severity_norm * 0.3 + (1 - avg_sentiment) * 0.2
+        freq_norm = min(freq / max(total_reviews * 0.3, 1), 1.0)
+        severity_norm = avg_severity / 10.0
+        impact = round((freq_norm * 0.5 + severity_norm * 0.3 + (1.0 - avg_sentiment) * 0.2) * 100, 1)
+
+        # Trend: compare last 7d vs previous 7d
+        recent_cutoff = now - timedelta(days=7)
+        prev_cutoff = now - timedelta(days=14)
+        recent_count = 0
+        prev_count = 0
+        for r in cat_reviews:
+            ts = r.get("timestamp")
+            if not ts:
+                continue
+            if isinstance(ts, str):
+                ts = datetime.fromisoformat(ts)
+            if ts >= recent_cutoff:
+                recent_count += 1
+            elif ts >= prev_cutoff:
+                prev_count += 1
+
+        if prev_count > 0 and recent_count > prev_count * 1.15:
+            trend = "up"
+        elif prev_count > 0 and recent_count < prev_count * 0.85:
+            trend = "down"
+        else:
+            trend = "stable"
+
+        affected_pct = round((freq / total_reviews) * 100, 1)
+
+        example_reviews = [
+            {"text": r.get("text", "")[:200], "rating": r.get("rating"), "sentiment": r.get("sentiment")}
+            for r in sorted(cat_reviews, key=lambda x: x.get("sentiment_score", 1))[:3]
+        ]
+
+        issues.append({
+            "name": cat,
+            "impact": impact,
+            "trend": trend,
+            "affected_users": affected_pct,
+            "frequency": freq,
+            "avg_severity": round(avg_severity, 2),
+            "avg_sentiment": round(avg_sentiment, 3),
+            "avg_rating": round(avg_rating, 2),
+            "example_reviews": example_reviews,
+        })
+
+    issues.sort(key=lambda x: x["impact"], reverse=True)
+    for idx, issue in enumerate(issues, 1):
+        issue["rank"] = idx
+
+    return issues

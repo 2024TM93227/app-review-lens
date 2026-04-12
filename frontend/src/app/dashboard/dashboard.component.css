@@ -624,3 +624,55 @@
     flex-direction: column;
   }
 }
+
+/* V2 additions */
+.info-banner {
+  background: #27ae60;
+  color: white;
+  padding: 12px 16px;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  font-weight: 600;
+}
+
+.chart-section {
+  background: white;
+  padding: 24px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  margin-bottom: 24px;
+}
+.chart-section h2 {
+  margin: 0 0 16px;
+  font-size: 1.3rem;
+  color: #2c3e50;
+}
+
+.review-text-cell {
+  max-width: 400px;
+  word-break: break-word;
+}
+
+.severity-pill {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: white;
+}
+.severity-pill.sev-critical { background: #e74c3c; }
+.severity-pill.sev-high { background: #f39c12; }
+.severity-pill.sev-medium { background: #f1c40f; color: #333; }
+.severity-pill.sev-low { background: #27ae60; }
+
+tr.sev-critical { border-left: 3px solid #e74c3c; }
+tr.sev-high { border-left: 3px solid #f39c12; }
+
+span.rating-bad { color: #e74c3c; font-weight: 700; }
+span.rating-ok { color: #f39c12; font-weight: 700; }
+span.rating-good { color: #27ae60; font-weight: 700; }
+
+span.positive { color: #27ae60; font-weight: 600; text-transform: capitalize; }
+span.negative { color: #e74c3c; font-weight: 600; text-transform: capitalize; }
+span.neutral { color: #95a5a6; font-weight: 600; text-transform: capitalize; }

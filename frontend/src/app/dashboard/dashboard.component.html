@@ -6,146 +6,152 @@
     </div>
   </header>
 
+  <!-- Controls -->
   <div class="controls-panel">
     <div class="app-selector">
       <label>Select App:</label>
-      <select [(ngModel)]="appId" class="app-input">
+      <select [(ngModel)]="appId" (ngModelChange)="loadDashboard()" class="app-input">
         <option *ngFor="let app of monitoredApps" [value]="app.id">
           {{ app.name }} ({{ app.id }})
         </option>
       </select>
     </div>
-    
     <div class="action-buttons">
-      <button (click)="generateInsights()" class="btn btn-primary" [disabled]="loading">
-        ⚡ Generate Insights
+      <button (click)="ingestReviews()" class="btn btn-secondary" [disabled]="loading">
+        📥 Ingest Reviews
       </button>
       <button routerLink="/compare" class="btn btn-primary" style="background:#7158e2;">
-        📊 Go to Compare
+        📊 Compare Apps
       </button>
     </div>
   </div>
 
-  <!-- LOADING / ERROR -->
+  
+
+  <!-- Info / Error Messages -->
+  <div *ngIf="infoMessage" class="info-banner">✅ {{ infoMessage }}</div>
+  <div *ngIf="error" class="error-banner">❌ {{ error }}</div>
+
+  <!-- Loading -->
   <div *ngIf="loading" class="loading-spinner">
     <div class="spinner"></div>
     <p>Loading data...</p>
   </div>
 
-  <div *ngIf="error" class="error-banner">❌ {{ error }}</div>
+  <!-- Main Content -->
+  <div *ngIf="!loading" class="dashboard-content">
 
-  <!-- MAIN -->
-  <div *ngIf="!loading && stats.total_reviews" class="dashboard-content">
-
-    <!-- STATS -->
-    <div class="stats-grid">
-      <div class="stat-card">
-        <h3>Total Reviews</h3>
-        <p class="stat-value">{{ stats.total_reviews }}</p>
-      </div>
-      <div class="stat-card">
-        <h3>Avg Rating</h3>
-        <p class="stat-value">{{ stats.avg_rating | number:'1.1-1' }}</p>
-      </div>
-      <div class="stat-card">
-        <h3>Sentiment Score</h3>
-        <p class="stat-value">{{ stats.avg_sentiment_score | number:'1.2-2' }}</p>
-      </div>
-      <div class="stat-card">
-        <h3>Positive</h3>
-        <p class="stat-value">{{ stats.sentiment_distribution.positive }}</p>
-      </div>
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-button" [class.active]="activeTab === 'overview'" (click)="activeTab = 'overview'">
+        📊 Overview
+      </button>
+      <button class="tab-button" [class.active]="activeTab === 'reviews'" (click)="activeTab = 'reviews'">
+        📋 Reviews
+      </button>
     </div>
 
-    
+    <!-- ========== OVERVIEW TAB ========== -->
+    <div *ngIf="activeTab === 'overview'" class="tab-content">
 
-    <!-- INSIGHTS CONTENT -->
-    <div class="tab-content">
+      <!-- Summary Cards -->
+      <app-summary-card
+        [totalReviews]="totalReviews"
+        [ratingTrend]="ratingTrend"
+        [topIssue]="topIssues.length > 0 ? topIssues[0] : null">
+      </app-summary-card>
 
-      <!-- 🔥 PIE CHART -->
-      <div class="chart-section">
-        <h2>📊 Sentiment Overview</h2>
+      <!-- Alerts Panel -->
+      <app-alerts-panel [alerts]="alerts"></app-alerts-panel>
+
+      <!-- Charts: Rating Trend + Issue Distribution -->
+      <app-charts
+        [ratingTrend]="ratingTrend"
+        [issues]="topIssues">
+      </app-charts>
+
+      <!-- Sentiment Overview (V1 pie chart) -->
+      <div class="chart-section" *ngIf="sentimentData.positive + sentimentData.negative + sentimentData.neutral > 0">
+        <h2>📊 Sentiment Distribution</h2>
         <app-sentiment-chart [sentimentData]="sentimentData"></app-sentiment-chart>
       </div>
 
-      <!-- 🔥 BAR GRAPH -->
-      
-      
+      <!-- Issue Prioritization Table -->
+      <app-issue-list
+        [issues]="topIssues"
+        (issueClicked)="navigateToIssue($event)">
+      </app-issue-list>
 
-      <!-- 🔥 INSIGHTS LIST -->
-      <h2>🎯 Top Issues to Address</h2>
+    </div>
 
-      <div *ngIf="insights.length > 0; else noInsights" class="insights-list">
-        <div *ngFor="let insight of insights"
-             class="insight-card"
-             [ngClass]="getPriorityColor(insight.priority_score)">
+    <!-- ========== REVIEWS TAB ========== -->
+    <div *ngIf="activeTab === 'reviews'" class="tab-content">
+      <div *ngIf="recentReviews.length > 0" class="recent-reviews-panel">
+        <h3>Recent Reviews
+          <span class="refresh-info" *ngIf="lastRefreshed">Last refreshed: {{ lastRefreshed }}</span>
+        </h3>
+        <!-- Filters -->
+        <app-filters (filtersChanged)="onFiltersChanged($event)"></app-filters>
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Date</th>
+              <th>Rating</th>
+              <th>Sentiment</th>
+              <th>Category</th>
+              <th>Severity</th>
+              <th>Review</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let r of (showAllReviews ? recentReviews : (recentReviews | slice:0:10)); index as i"
+                [ngClass]="getSeverityClass(r.severity)">
+              <td>{{ i + 1 }}</td>
+              <td>{{ r.timestamp | date:'shortDate' }}</td>
+              <td>
+                <span [ngClass]="{'rating-bad': r.rating <= 2, 'rating-ok': r.rating === 3, 'rating-good': r.rating >= 4}">
+                  {{ r.rating }} ★
+                </span>
+              </td>
+              <td>
+                <span [ngClass]="r.sentiment">{{ r.sentiment }}</span>
+              </td>
+              <td>{{ formatLabel(r.issue_category) }}</td>
+              <td>
+                <span *ngIf="r.severity" class="severity-pill" [ngClass]="getSeverityClass(r.severity)">
+                  {{ r.severity | number:'1.1-1' }}
+                </span>
+              </td>
+              <td class="review-text-cell">{{ r.text | slice:0:120 }}{{ r.text?.length > 120 ? '...' : '' }}</td>
+            </tr>
+          </tbody>
+        </table>
 
-          <div class="insight-header">
-            <span class="rank-badge">#{{ insight.rank }}</span>
-            <h3>{{ formatLabel(insight.category) }}</h3>
-            <span class="subcategory">{{ insight.subcategory }}</span>
-          </div>
-          
-          <div class="insight-details">
-            <p class="description">{{ insight.description }}</p>
-            <p class="insight-why">
-              Why this matters: {{ getInsightExplanation(insight) }}
-            </p>
-          </div>
+        <div style="text-align:center; margin-top:10px;">
+          <button class="btn btn-primary" (click)="toggleReviews()">
+            {{ showAllReviews ? 'Show Less ▲' : 'View All ▼' }}
+          </button>
         </div>
       </div>
 
-      <ng-template #noInsights>
-        <p class="no-data">No insights generated yet.</p>
-      </ng-template>
-
+      <div *ngIf="recentReviews.length === 0" class="no-data">
+        No reviews found for the selected filters.
+      </div>
     </div>
+
   </div>
 
-  <!-- 🔥 REVIEWS (LIMIT + VIEW MORE) -->
-  <div *ngIf="recentReviews.length > 0" class="recent-reviews-panel">
-    <h3>Recent Ingested Reviews</h3>
-
-    <table>
-      <thead>
-        <tr>
-          <th>SL</th>
-          <th>Date</th>
-          <th>Rating</th>
-          <th>Sentiment</th>
-          <th>Snippet</th>
-        </tr>
-      </thead>
-
-      <tbody>
-        <tr *ngFor="let r of (showAllReviews ? recentReviews : (recentReviews | slice:0:5)); index as i">
-          <td>{{ i + 1 }}</td>
-          <td>{{ r.timestamp | date:'short' }}</td>
-          <td>{{ r.rating }}</td>
-          <td>{{ r.sentiment }}</td>
-          <td>{{ r.text | slice:0:75 }}{{ r.text.length > 75 ? '...' : '' }}</td>
-        </tr>
-      </tbody>
-    </table>
-
-    <!-- VIEW MORE -->
-    <div style="text-align:center; margin-top:10px;">
-      <button class="btn btn-primary" (click)="toggleReviews()">
-        {{ showAllReviews ? 'Show Less ▲' : 'View More ▼' }}
-      </button>
-    </div>
-  </div>
-
-  <!-- EMPTY -->
-  <div *ngIf="!loading && !stats.total_reviews" class="empty-state">
+  <!-- Empty State -->
+  <div *ngIf="!loading && totalReviews === 0 && !error" class="empty-state">
     <p>👋 Welcome to App Review Lens</p>
     <p>Select an app and ingest reviews to get started</p>
   </div>
 
-  <!-- FOOTER -->
+  <!-- Footer -->
   <footer class="app-footer">
     <div class="app-footer-box">
-      <p>App Review Lens • Actionable review insights for product teams.</p>
+      <p>App Review Lens v2 • Actionable review insights for product teams.</p>
     </div>
   </footer>
 </div>
