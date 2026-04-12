@@ -86,12 +86,12 @@
 
     <!-- ========== REVIEWS TAB ========== -->
     <div *ngIf="activeTab === 'reviews'" class="tab-content">
-      <div *ngIf="recentReviews.length > 0" class="recent-reviews-panel">
+      <div class="recent-reviews-panel">
         <h3>Recent Reviews
           <span class="refresh-info" *ngIf="lastRefreshed">Last refreshed: {{ lastRefreshed }}</span>
         </h3>
         <!-- Filters -->
-        <app-filters (filtersChanged)="onFiltersChanged($event)"></app-filters>
+        <app-filters [initialFilters]="currentFilters" (filtersChanged)="onFiltersChanged($event)"></app-filters>
         <table>
           <thead>
             <tr>
@@ -125,18 +125,17 @@
               </td>
               <td class="review-text-cell">{{ r.text | slice:0:120 }}{{ r.text?.length > 120 ? '...' : '' }}</td>
             </tr>
+            <tr *ngIf="recentReviews.length === 0">
+              <td colspan="7" class="empty-table-message">No reviews found for the selected filters.</td>
+            </tr>
           </tbody>
         </table>
 
-        <div style="text-align:center; margin-top:10px;">
+        <div *ngIf="recentReviews.length > 10" style="text-align:center; margin-top:10px;">
           <button class="btn btn-primary" (click)="toggleReviews()">
             {{ showAllReviews ? 'Show Less ▲' : 'View All ▼' }}
           </button>
         </div>
-      </div>
-
-      <div *ngIf="recentReviews.length === 0" class="no-data">
-        No reviews found for the selected filters.
       </div>
     </div>
 

@@ -676,3 +676,10 @@ span.rating-good { color: #27ae60; font-weight: 700; }
 span.positive { color: #27ae60; font-weight: 600; text-transform: capitalize; }
 span.negative { color: #e74c3c; font-weight: 600; text-transform: capitalize; }
 span.neutral { color: #95a5a6; font-weight: 600; text-transform: capitalize; }
+
+.empty-table-message {
+  text-align: center;
+  color: #7f8c8d;
+  padding: 32px 16px;
+  font-size: 0.95rem;
+}

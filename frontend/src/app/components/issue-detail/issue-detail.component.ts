@@ -27,7 +27,7 @@ const HIGHLIGHT_KEYWORDS = [
       </header>
 
       <div class="back-bar">
-        <a routerLink="/" class="back-link">← Back to Dashboard</a>
+        <a [routerLink]="['/']" [queryParams]="{ appId: appId }" class="back-link">← Back to Dashboard</a>
       </div>
 
       <div *ngIf="loading" class="loading-spinner">
@@ -264,12 +264,14 @@ export class IssueDetailComponent implements OnInit, AfterViewInit {
   detail: IssueDetailResponse | null = null;
   loading = true;
   error = '';
+  appId = '';
   private chart: Chart | null = null;
 
   constructor(private route: ActivatedRoute, private api: ApiService) {}
 
   ngOnInit(): void {
-    const appId = this.route.snapshot.paramMap.get('appId') || '';
+    this.appId = this.route.snapshot.paramMap.get('appId') || '';
+    const appId = this.appId;
     const issueName = this.route.snapshot.paramMap.get('issueName') || '';
     const days = +(this.route.snapshot.queryParamMap.get('days') || '30');
 

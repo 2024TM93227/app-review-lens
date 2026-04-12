@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -84,8 +84,9 @@ export interface FilterState {
     .btn-group button.sentiment-neg.active { background: #e74c3c; border-color: #e74c3c; }
   `]
 })
-export class FiltersComponent {
+export class FiltersComponent implements OnInit {
   @Output() filtersChanged = new EventEmitter<FilterState>();
+  @Input() initialFilters: FilterState | null = null;
 
   dayOptions = [7, 14, 30, 90];
 
@@ -94,6 +95,12 @@ export class FiltersComponent {
     rating: null,
     sentiment: null,
   };
+
+  ngOnInit(): void {
+    if (this.initialFilters) {
+      this.filters = { ...this.initialFilters };
+    }
+  }
 
   setDays(d: number) {
     this.filters.days = d;

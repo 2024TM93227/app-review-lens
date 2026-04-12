@@ -1,7 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { ApiService } from '../services/api.service';
 import { SentimentChartComponent } from '../components/sentiment-chart.component';
 import { SummaryCardComponent } from '../components/summary-card/summary-card.component';
@@ -42,7 +42,7 @@ export class DashboardComponent implements OnInit {
     { name: 'Swiggy Instamart', id: 'in.swiggy.android.instamart' }
   ];
 
-  appId: string = this.monitoredApps[0].id;
+  appId: string = this.restoreAppId();
 
   // V2 data
   topIssues: TopIssue[] = [];
@@ -65,10 +65,35 @@ export class DashboardComponent implements OnInit {
   showAllReviews = false;
   activeTab: 'overview' | 'reviews' = 'overview';
 
-  constructor(private api: ApiService, private router: Router) {}
+  constructor(
+    private api: ApiService,
+    private router: Router,
+    private route: ActivatedRoute,
+  ) {}
 
   ngOnInit(): void {
+    const qp = this.route.snapshot.queryParamMap.get('appId');
+    if (qp && this.monitoredApps.some(a => a.id === qp)) {
+      this.appId = qp;
+    }
+    this.persistAppId();
     this.loadDashboard();
+  }
+
+  private restoreAppId(): string {
+    try {
+      const saved = localStorage.getItem('arl_appId');
+      if (saved && this.monitoredApps.some(a => a.id === saved)) {
+        return saved;
+      }
+    } catch { /* noop */ }
+    return this.monitoredApps[0].id;
+  }
+
+  private persistAppId(): void {
+    try {
+      localStorage.setItem('arl_appId', this.appId);
+    } catch { /* noop */ }
   }
 
   loadDashboard() {
@@ -81,10 +106,14 @@ export class DashboardComponent implements OnInit {
     this.error = '';
     this.infoMessage = '';
 
+    this.persistAppId();
+
     // V2: Load insights
     this.api.getInsightsV2(this.appId, this.currentFilters.days).subscribe({
       next: (data: InsightsV2Response) => {
-        this.topIssues = data.top_issues || [];
+        this.topIssues = (data.top_issues || []).filter(
+          issue => issue.avg_sentiment < 0.4
+        );
         this.alerts = data.alerts || [];
         this.ratingTrend = data.rating_trend || [];
         this.totalReviews = data.total_reviews || 0;
@@ -128,7 +157,7 @@ export class DashboardComponent implements OnInit {
 
   navigateToIssue(issueName: string) {
     this.router.navigate(['/issues', this.appId, issueName], {
-      queryParams: { days: this.currentFilters.days }
+      queryParams: { days: this.currentFilters.days, appId: this.appId }
     });
   }
 
