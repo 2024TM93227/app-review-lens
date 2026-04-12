@@ -145,7 +145,10 @@ export class DashboardComponent implements OnInit {
       this.currentFilters.rating || undefined,
       this.currentFilters.days || undefined,
     ).subscribe(res => {
-      this.recentReviews = res.reviews || [];
+      this.recentReviews = (res.reviews || []).map((r: any) => ({
+        ...r,
+        sentiment: this.deriveSentiment(r),
+      }));
       this.lastRefreshed = new Date().toLocaleTimeString();
     });
   }
@@ -191,5 +194,16 @@ export class DashboardComponent implements OnInit {
     if (severity > 5) return 'sev-high';
     if (severity > 3) return 'sev-medium';
     return 'sev-low';
+  }
+
+  /** Re-derive sentiment from the 0-1 sentiment_score to fix label mismatches */
+  private deriveSentiment(review: any): string {
+    const score = review.sentiment_score;
+    if (typeof score === 'number') {
+      if (score < 0.4) return 'negative';
+      if (score > 0.6) return 'positive';
+      return 'neutral';
+    }
+    return review.sentiment || 'neutral';
   }
 }
