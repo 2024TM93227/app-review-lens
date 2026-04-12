@@ -56,7 +56,7 @@ def ingest_reviews(app_id: str, country: str = "in", lang: str = "en", count: in
                     continue
 
                 text = review_data.get("content", "").strip()
-                if len(text) < 10:
+                if len(text) < 3:
                     continue
 
                 review_id = review_data.get("review_id")
@@ -166,8 +166,6 @@ def list_reviews(
             Review.is_spam == is_spam
         )
 
-        if sentiment:
-            query = query.filter(Review.sentiment == sentiment)
         if issue_category:
             query = query.filter(Review.issue_category == issue_category)
         if rating:
@@ -176,11 +174,9 @@ def list_reviews(
             cutoff = datetime.now() - timedelta(days=days)
             query = query.filter(Review.timestamp >= cutoff)
 
-        total = query.count()
-
-        # 🔥 FIX: latest first
-        reviews = query.order_by(Review.timestamp.desc()) \
-                       .offset(offset).limit(limit).all()
+        # Fetch all matching reviews (before sentiment filter) so we can
+        # re-derive sentiment with rating-aware logic, then apply sentiment filter
+        all_reviews = query.order_by(Review.timestamp.desc()).all()
 
         def _corrected_review(r):
             label, score = analyze_sentiment_v2(r.text or "", rating=r.rating)
@@ -196,9 +192,18 @@ def list_reviews(
                 "timestamp": r.timestamp.isoformat() if r.timestamp else None
             }
 
+        corrected = [_corrected_review(r) for r in all_reviews]
+
+        # Apply sentiment filter on corrected labels (not stale DB values)
+        if sentiment:
+            corrected = [r for r in corrected if r["sentiment"] == sentiment]
+
+        total = len(corrected)
+        paginated = corrected[offset:offset + limit]
+
         return {
             "total": total,
-            "reviews": [_corrected_review(r) for r in reviews]
+            "reviews": paginated
         }
     finally:
         db.close()

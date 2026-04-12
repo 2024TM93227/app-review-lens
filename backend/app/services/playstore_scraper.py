@@ -36,8 +36,8 @@ def fetch_reviews(app_id: str, lang: str = "en", country: str = "in", count: int
         
         # Add review ID and metadata
         for review in data:
-            # Generate unique review ID from content hash
-            review['review_id'] = generate_review_id(
+            # Use actual Play Store review ID if available, otherwise generate one
+            review['review_id'] = review.get('reviewId') or generate_review_id(
                 app_id, 
                 review.get('content', ''), 
                 review.get('reviewCreatedVersion', '')
@@ -154,7 +154,7 @@ def fetch_reviews_incremental(app_id: str, days: int = 7):
 
 def validate_review(review: Dict) -> bool:
     """Validate review has required fields"""
-    if not review.get('content') or len(review.get('content', '')) < 10:
+    if not review.get('content') or len(review.get('content', '').strip()) < 3:
         return False
     if review.get('score') is None:
         return False
