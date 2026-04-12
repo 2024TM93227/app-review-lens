@@ -13,6 +13,7 @@ from app.services.severity import calculate_severity
 from app.services.prioritization import aggregate_issues
 from app.services.alerts import detect_alerts
 from app.services.trends import build_sentiment_trend
+from app.services.sentiment import analyze_sentiment_v2
 
 logger = logging.getLogger(__name__)
 
@@ -20,15 +21,17 @@ router = APIRouter()
 
 
 def _review_to_dict(r) -> dict:
-    """Convert a Review ORM object to a plain dict for service functions."""
+    """Convert a Review ORM object to a plain dict for service functions.
+    Re-derives sentiment using rating-aware logic so stale DB labels are corrected."""
+    corrected_label, corrected_score = analyze_sentiment_v2(r.text or "", rating=r.rating)
     return {
         "id": r.id,
         "review_id": r.review_id,
         "app_id": r.app_id,
         "rating": r.rating,
         "text": r.text,
-        "sentiment": r.sentiment,
-        "sentiment_score": r.sentiment_score,
+        "sentiment": corrected_label,
+        "sentiment_score": corrected_score,
         "domain_category": r.domain_category,
         "domain_subcategory": r.domain_subcategory,
         "issue_category": classify_issue(r.text or ""),

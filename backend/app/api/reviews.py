@@ -182,22 +182,23 @@ def list_reviews(
         reviews = query.order_by(Review.timestamp.desc()) \
                        .offset(offset).limit(limit).all()
 
+        def _corrected_review(r):
+            label, score = analyze_sentiment_v2(r.text or "", rating=r.rating)
+            return {
+                "id": r.id,
+                "rating": r.rating,
+                "text": r.text,
+                "sentiment": label,
+                "sentiment_score": score,
+                "issue_category": r.issue_category,
+                "severity": r.severity,
+                "app_version": r.app_version,
+                "timestamp": r.timestamp.isoformat() if r.timestamp else None
+            }
+
         return {
             "total": total,
-            "reviews": [
-                {
-                    "id": r.id,
-                    "rating": r.rating,
-                    "text": r.text,
-                    "sentiment": r.sentiment,
-                    "sentiment_score": r.sentiment_score,
-                    "issue_category": r.issue_category,
-                    "severity": r.severity,
-                    "app_version": r.app_version,
-                    "timestamp": r.timestamp.isoformat() if r.timestamp else None
-                }
-                for r in reviews
-            ]
+            "reviews": [_corrected_review(r) for r in reviews]
         }
     finally:
         db.close()
