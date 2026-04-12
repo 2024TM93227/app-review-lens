@@ -206,11 +206,49 @@ Alerts fire for:
 
 ### Main Dashboard (Single-Page Layout)
 1. **App Selector** — Switch between Swiggy, Zomato, Uber Eats, Instamart
-2. **Summary Cards** — Total reviews, avg rating, sentiment distribution at a glance
+2. **Summary Cards** — Total reviews, avg rating, sentiment distribution, top issue at a glance
 3. **Alert Panel** — Real-time spike notifications with severity badges
-4. **Sentiment Chart** — Visual breakdown of positive / negative / neutral
-5. **Top Issues List** — Prioritized issues ranked by composite score, clickable for drill-down
-6. **Review Table** — Filterable by sentiment, rating, time period; shows review text, rating, sentiment label, category, date
+4. **"What to Fix" Action Plan** — The core PM feature. Top 5 issues displayed as actionable cards:
+   - **Ranked by impact** (composite of frequency, negativity, rating, recency)
+   - **Concrete recommendation** per issue (e.g., "Investigate courier allocation and ETA accuracy")
+   - **Detailed next steps** (e.g., "Audit delivery SLA breaches in the last sprint. Check if peak-hour demand is exceeding rider supply.")
+   - **Owner/team** assignment (e.g., "Logistics / Operations")
+   - **Supporting data** — complaint count, affected user %, avg rating, trend direction
+5. **Issue Prioritization Table** — Full ranked list with impact bars, trend arrows, severity, and recommended action per row
+6. **Sentiment Chart** — Visual breakdown of positive / negative / neutral
+7. **Review Table** — Filterable by sentiment, rating, time period; shows review text, rating, sentiment label, category, date
+
+### How the "What to Fix" Section Works
+
+This is the feature that directly fulfills the motto **"Tell the PM what to do."**
+
+```
+Step 1: Classify every review into 11 food-delivery categories
+Step 2: Score each category by impact (frequency × negativity × rating × recency)
+Step 3: Map each category to a pre-defined actionable recommendation:
+
+  delivery_time  →  "Investigate courier allocation and ETA accuracy"
+                    Owner: Logistics / Operations
+
+  food_quality   →  "Tighten restaurant quality SLAs and packaging standards"
+                    Owner: Restaurant Partnerships
+
+  payment        →  "Fix payment failure retry flow and expedite refunds"
+                    Owner: Payments / FinOps
+
+  ... (11 categories, each with action + detail + owner)
+
+Step 4: Present as ranked action cards — PM opens dashboard and immediately
+        sees: "Fix #1: Delivery Time — Investigate courier allocation..."
+```
+
+Each recommendation includes:
+- **What to do** (one-line action)
+- **How to investigate** (2-3 sentence detail with specific steps)
+- **Who owns it** (team/function)
+- **Why it matters** (impact score, complaint volume, user %, trend)
+
+This transforms the dashboard from "here's what's broken" into **"here's what to fix, in what order, and who should own it."**
 
 ### Issue Drill-Down
 - Click any top issue → see all reviews in that category

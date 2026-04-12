@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 import logging
 
 from app.services.severity import calculate_severity
-from app.services.classification import classify_issue, get_all_categories
+from app.services.classification import classify_issue, get_all_categories, get_recommendation
 
 logger = logging.getLogger(__name__)
 
@@ -285,6 +285,8 @@ def aggregate_issues(reviews: List[Dict]) -> List[Dict]:
             for r in sorted(cat_reviews, key=lambda x: x.get("sentiment_score", 1))[:3]
         ]
 
+        rec = get_recommendation(cat)
+
         issues.append({
             "name": cat,
             "impact": impact,
@@ -295,6 +297,9 @@ def aggregate_issues(reviews: List[Dict]) -> List[Dict]:
             "avg_sentiment": round(avg_sentiment, 3),
             "avg_rating": round(avg_rating, 2),
             "example_reviews": example_reviews,
+            "recommendation": rec["action"],
+            "recommendation_detail": rec["detail"],
+            "recommendation_owner": rec["owner"],
         })
 
     issues.sort(key=lambda x: x["impact"], reverse=True)

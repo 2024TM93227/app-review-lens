@@ -64,6 +64,38 @@
       <!-- Alerts Panel -->
       <app-alerts-panel [alerts]="alerts"></app-alerts-panel>
 
+      <!-- ===== ACTION PLAN: What to Fix ===== -->
+      <div class="action-plan-section" *ngIf="topIssues.length > 0">
+        <h2>🛠 What to Fix — Action Plan</h2>
+        <p class="action-plan-subtitle">Prioritized recommendations based on user pain points</p>
+        <div class="action-plan-list">
+          <div *ngFor="let issue of topIssues | slice:0:5; index as i"
+               class="action-card"
+               [ngClass]="{'action-critical': issue.impact >= 60, 'action-high': issue.impact >= 40 && issue.impact < 60, 'action-medium': issue.impact < 40}">
+            <div class="action-rank">#{{ i + 1 }}</div>
+            <div class="action-body">
+              <div class="action-header">
+                <span class="action-category">{{ formatLabel(issue.name) }}</span>
+                <span class="action-impact-badge" [ngClass]="{'impact-critical': issue.impact >= 60, 'impact-high': issue.impact >= 40 && issue.impact < 60, 'impact-medium': issue.impact < 40}">
+                  Impact: {{ issue.impact }}
+                </span>
+                <span class="action-trend" [ngClass]="issue.trend">
+                  <span *ngIf="issue.trend === 'up'">↑ Worsening</span>
+                  <span *ngIf="issue.trend === 'down'">↓ Improving</span>
+                  <span *ngIf="issue.trend === 'stable'">→ Stable</span>
+                </span>
+              </div>
+              <div class="action-recommendation">{{ issue.recommendation }}</div>
+              <div class="action-detail">{{ issue.recommendation_detail }}</div>
+              <div class="action-meta">
+                <span class="action-owner">👤 {{ issue.recommendation_owner }}</span>
+                <span class="action-stats">{{ issue.frequency }} complaints · {{ issue.affected_users }}% users · {{ issue.avg_rating | number:'1.1-1' }} ★ avg</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Charts: Rating Trend + Issue Distribution -->
       <app-charts
         [ratingTrend]="ratingTrend"

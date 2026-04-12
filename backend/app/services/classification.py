@@ -169,6 +169,75 @@ def map_v1_category(v1_category: str) -> str:
     return V1_TO_V2_CATEGORY_MAP.get(v1_category, "uncategorized")
 
 
+# Actionable PM recommendations per category
+CATEGORY_RECOMMENDATIONS: Dict[str, Dict[str, str]] = {
+    "delivery_time": {
+        "action": "Investigate courier allocation and ETA accuracy",
+        "detail": "Audit delivery SLA breaches in the last sprint. Check if peak-hour demand is exceeding rider supply. Review ETA prediction model drift.",
+        "owner": "Logistics / Operations",
+    },
+    "delivery_agent": {
+        "action": "Review rider conduct and training program",
+        "detail": "Flag top-offending riders for retraining. Audit food tamper-proofing (sealed bags). Add post-delivery rating nudge for rider feedback.",
+        "owner": "Operations / Trust & Safety",
+    },
+    "food_quality": {
+        "action": "Tighten restaurant quality SLAs and packaging standards",
+        "detail": "Identify restaurants with repeat quality complaints. Enforce hot-bag usage. Consider adding quality score to restaurant ranking algorithm.",
+        "owner": "Restaurant Partnerships",
+    },
+    "order_accuracy": {
+        "action": "Improve order verification at restaurant handoff",
+        "detail": "Add item-level confirmation checklist for restaurant partners. Investigate if menu sync issues are causing substitutions.",
+        "owner": "Product / Restaurant Ops",
+    },
+    "packaging": {
+        "action": "Mandate spill-proof packaging for liquid items",
+        "detail": "Audit packaging SLA compliance. Require sealed containers for soups, beverages, and curries. Add packaging quality as a restaurant metric.",
+        "owner": "Restaurant Partnerships / Supply",
+    },
+    "app_experience": {
+        "action": "Prioritize crash fixes and performance optimization",
+        "detail": "Check crash analytics (Firebase/Sentry) for top crash signatures. Profile app startup time and API latency on low-end devices.",
+        "owner": "Engineering / Mobile",
+    },
+    "payment": {
+        "action": "Fix payment failure retry flow and expedite refunds",
+        "detail": "Audit payment gateway failure rates by provider. Reduce refund SLA from 7 days to 48 hours. Add auto-retry for transient failures.",
+        "owner": "Payments / FinOps",
+    },
+    "pricing": {
+        "action": "Improve pricing transparency and fee breakdown",
+        "detail": "Show itemized fee breakdown before checkout (delivery fee, platform fee, taxes). Evaluate if surge pricing thresholds need adjustment.",
+        "owner": "Product / Pricing",
+    },
+    "promotions_offers": {
+        "action": "Fix promo code application flow and clarify offer terms",
+        "detail": "Audit coupon validation logic for edge cases. Add clear eligibility criteria on offer cards. Track coupon failure reasons.",
+        "owner": "Growth / Marketing",
+    },
+    "customer_support": {
+        "action": "Reduce support response time and improve resolution rate",
+        "detail": "Audit first-response SLA. Reduce bot-only interactions for high-severity issues. Add escalation path visibility in the app.",
+        "owner": "Customer Support / CX",
+    },
+    "restaurant_issue": {
+        "action": "Improve restaurant availability and prep-time accuracy",
+        "detail": "Audit restaurant cancellation rates. Enforce real-time menu availability updates. Penalize repeated last-minute closures.",
+        "owner": "Restaurant Partnerships",
+    },
+}
+
+
+def get_recommendation(category: str) -> Dict[str, str]:
+    """Return the actionable recommendation for a given issue category."""
+    return CATEGORY_RECOMMENDATIONS.get(category, {
+        "action": "Investigate user complaints in this area",
+        "detail": "Review sample reviews to identify root cause patterns.",
+        "owner": "Product",
+    })
+
+
 def get_all_categories() -> List[str]:
     """Return list of all supported category names."""
     return list(CATEGORY_KEYWORDS.keys())

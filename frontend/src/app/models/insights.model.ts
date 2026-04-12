@@ -13,6 +13,9 @@ export interface TopIssue {
   avg_rating: number;
   rank: number;
   example_reviews: ExampleReview[];
+  recommendation: string;
+  recommendation_detail: string;
+  recommendation_owner: string;
 }
 
 export interface ExampleReview {

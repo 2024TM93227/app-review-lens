@@ -16,6 +16,7 @@ import { TopIssue } from '../../models/insights.model';
               <th>Rank</th>
               <th>Issue</th>
               <th>Impact</th>
+              <th>Recommended Action</th>
               <th>Trend</th>
               <th>Affected</th>
               <th>Avg Rating</th>
@@ -37,6 +38,10 @@ import { TopIssue } from '../../models/insights.model';
                   <div class="impact-bar" [style.width.%]="issue.impact" [ngClass]="getImpactClass(issue.impact)"></div>
                   <span class="impact-value">{{ issue.impact }}</span>
                 </div>
+              </td>
+              <td class="recommendation-cell">
+                <span class="recommendation-text">{{ issue.recommendation }}</span>
+                <span class="recommendation-owner">👤 {{ issue.recommendation_owner }}</span>
               </td>
               <td class="trend-cell">
                 <span class="trend-indicator" [ngClass]="issue.trend">
@@ -151,6 +156,22 @@ import { TopIssue } from '../../models/insights.model';
       background: white;
       border-radius: 8px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .recommendation-cell {
+      max-width: 240px;
+      line-height: 1.4;
+    }
+    .recommendation-text {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #2c3e50;
+    }
+    .recommendation-owner {
+      display: block;
+      font-size: 0.75rem;
+      color: #7f8c8d;
+      margin-top: 2px;
     }
   `]
 })

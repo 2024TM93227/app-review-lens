@@ -683,3 +683,105 @@ span.neutral { color: #95a5a6; font-weight: 600; text-transform: capitalize; }
   padding: 32px 16px;
   font-size: 0.95rem;
 }
+
+/* ===== Action Plan Section ===== */
+.action-plan-section {
+  margin-bottom: 28px;
+}
+.action-plan-section h2 {
+  margin: 0 0 4px;
+  font-size: 1.3rem;
+  color: #2c3e50;
+}
+.action-plan-subtitle {
+  margin: 0 0 16px;
+  font-size: 0.88rem;
+  color: #7f8c8d;
+}
+.action-plan-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.action-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 18px 20px;
+  border-radius: 10px;
+  background: white;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+  border-left: 5px solid #95a5a6;
+  transition: box-shadow 0.2s;
+}
+.action-card:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+}
+.action-card.action-critical { border-left-color: #e74c3c; }
+.action-card.action-high { border-left-color: #f39c12; }
+.action-card.action-medium { border-left-color: #3498db; }
+.action-rank {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #2c3e50;
+  min-width: 36px;
+  text-align: center;
+  padding-top: 2px;
+}
+.action-body { flex: 1; }
+.action-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+.action-category {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #2c3e50;
+}
+.action-impact-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 10px;
+  border-radius: 12px;
+  color: white;
+}
+.action-impact-badge.impact-critical { background: #e74c3c; }
+.action-impact-badge.impact-high { background: #f39c12; }
+.action-impact-badge.impact-medium { background: #3498db; }
+.action-trend {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.action-trend.up { color: #e74c3c; }
+.action-trend.down { color: #27ae60; }
+.action-trend.stable { color: #95a5a6; }
+.action-recommendation {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 4px;
+}
+.action-detail {
+  font-size: 0.88rem;
+  color: #555;
+  line-height: 1.5;
+  margin-bottom: 8px;
+}
+.action-meta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.action-owner {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #7158e2;
+}
+.action-stats {
+  font-size: 0.8rem;
+  color: #95a5a6;
+}
