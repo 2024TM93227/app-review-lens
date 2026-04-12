@@ -8,7 +8,7 @@ import logging
 
 from app.db.session import SessionLocal
 from app.models.review import Review
-from app.services.classification import classify_issue, get_all_categories
+from app.services.classification import classify_issue, get_all_categories, generate_smart_recommendation
 from app.services.severity import calculate_severity
 from app.services.prioritization import aggregate_issues
 from app.services.alerts import detect_alerts
@@ -134,6 +134,9 @@ def get_issue_detail(app_id: str, issue_name: str, days: int = 30):
         # AI insight (template-based)
         ai_insight = _generate_issue_insight(issue_name, issue_reviews, freq, total_all)
 
+        # Data-driven recommendation
+        recommendation = generate_smart_recommendation(issue_name, issue_reviews)
+
         return {
             "issue_name": issue_name,
             "app_id": app_id,
@@ -145,6 +148,10 @@ def get_issue_detail(app_id: str, issue_name: str, days: int = 30):
             "sentiment_breakdown": sentiment_breakdown,
             "trend_data": trend_data,
             "ai_insight": ai_insight,
+            "recommendation": recommendation.get("action", ""),
+            "recommendation_detail": recommendation.get("detail", ""),
+            "recommendation_owner": recommendation.get("owner", ""),
+            "top_complaints": recommendation.get("top_complaints", []),
             "reviews": [
                 {
                     "text": r["text"],

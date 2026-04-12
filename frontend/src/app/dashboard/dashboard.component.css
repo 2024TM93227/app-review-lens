@@ -785,3 +785,18 @@ span.neutral { color: #95a5a6; font-weight: 600; text-transform: capitalize; }
   font-size: 0.8rem;
   color: #95a5a6;
 }
+.action-complaints {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.complaint-chip {
+  background: #fff3cd;
+  color: #856404;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 12px;
+  border: 1px solid #ffc107;
+}

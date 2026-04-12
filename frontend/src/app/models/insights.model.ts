@@ -16,6 +16,7 @@ export interface TopIssue {
   recommendation: string;
   recommendation_detail: string;
   recommendation_owner: string;
+  top_complaints: string[];
 }
 
 export interface ExampleReview {
@@ -85,5 +86,9 @@ export interface IssueDetailResponse {
   sentiment_breakdown: SentimentBreakdown;
   trend_data: SentimentTrendPoint[];
   ai_insight: string;
+  recommendation: string;
+  recommendation_detail: string;
+  recommendation_owner: string;
+  top_complaints: string[];
   reviews: IssueDetailReview[];
 }

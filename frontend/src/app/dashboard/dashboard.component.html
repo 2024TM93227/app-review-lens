@@ -91,6 +91,9 @@
                 <span class="action-owner">👤 {{ issue.recommendation_owner }}</span>
                 <span class="action-stats">{{ issue.frequency }} complaints · {{ issue.affected_users }}% users · {{ issue.avg_rating | number:'1.1-1' }} ★ avg</span>
               </div>
+              <div class="action-complaints" *ngIf="issue.top_complaints && issue.top_complaints.length">
+                <span *ngFor="let c of issue.top_complaints" class="complaint-chip">{{ c }}</span>
+              </div>
             </div>
           </div>
         </div>

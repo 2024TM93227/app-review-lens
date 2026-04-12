@@ -238,6 +238,57 @@ def get_recommendation(category: str) -> Dict[str, str]:
     })
 
 
+def generate_smart_recommendation(category: str, reviews: List[Dict]) -> Dict[str, str]:
+    """
+    Generate a data-driven recommendation by analyzing actual review content.
+
+    Extracts the most frequently mentioned pain-point keywords from the reviews,
+    then enriches the static recommendation with evidence from the data.
+    """
+    base = get_recommendation(category)
+
+    if not reviews:
+        return base
+
+    # Count which category keywords actually appear in these reviews
+    keywords = CATEGORY_KEYWORDS.get(category, [])
+    keyword_hits: Dict[str, int] = {}
+    for r in reviews:
+        text_lower = (r.get("text") or "").lower()
+        for kw in keywords:
+            if kw in text_lower:
+                keyword_hits[kw] = keyword_hits.get(kw, 0) + 1
+
+    # Top 5 user-mentioned pain points
+    top_phrases = sorted(keyword_hits.items(), key=lambda x: x[1], reverse=True)[:5]
+
+    if not top_phrases:
+        return base
+
+    total = len(reviews)
+    neg_count = sum(1 for r in reviews if r.get("sentiment") == "negative")
+    avg_rating = sum(r.get("rating", 3) for r in reviews) / total
+
+    # Build evidence string from actual data
+    phrase_summary = ", ".join(
+        f'"{kw}" ({count} mentions)' for kw, count in top_phrases
+    )
+
+    evidence_detail = (
+        f"Based on {total} user reviews (avg rating {avg_rating:.1f}★, "
+        f"{neg_count} negative): users most frequently mention {phrase_summary}. "
+        f"{base['detail']}"
+    )
+
+    return {
+        "action": base["action"],
+        "detail": evidence_detail,
+        "owner": base["owner"],
+        "top_complaints": [kw for kw, _ in top_phrases],
+        "evidence_count": total,
+    }
+
+
 def get_all_categories() -> List[str]:
     """Return list of all supported category names."""
     return list(CATEGORY_KEYWORDS.keys())

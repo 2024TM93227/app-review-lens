@@ -97,6 +97,20 @@ const HIGHLIGHT_KEYWORDS = [
           <p>{{ detail.ai_insight }}</p>
         </div>
 
+        <!-- Recommendation (data-driven) -->
+        <div class="recommendation-box" *ngIf="detail.recommendation">
+          <div class="rec-header">🛠 Recommended Action</div>
+          <div class="rec-action">{{ detail.recommendation }}</div>
+          <p class="rec-detail">{{ detail.recommendation_detail }}</p>
+          <div class="rec-meta">
+            <span class="rec-owner">👤 Owner: {{ detail.recommendation_owner }}</span>
+          </div>
+          <div class="rec-complaints" *ngIf="detail.top_complaints && detail.top_complaints.length">
+            <span class="rec-complaints-label">Top user complaints:</span>
+            <span *ngFor="let c of detail.top_complaints" class="complaint-chip">{{ c }}</span>
+          </div>
+        </div>
+
         <!-- Reviews List -->
         <div class="reviews-section">
           <h3>📋 Reviews ({{ detail.reviews.length }})</h3>
@@ -224,6 +238,23 @@ const HIGHLIGHT_KEYWORDS = [
     }
     .ai-header { font-weight: 700; font-size: 1rem; color: #2c3e50; margin-bottom: 8px; }
     .ai-insight-box p { margin: 0; color: #34495e; line-height: 1.6; }
+
+    .recommendation-box {
+      background: #f0fdf4; border-left: 4px solid #27ae60;
+      padding: 20px 24px; border-radius: 8px; margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .rec-header { font-weight: 700; font-size: 1rem; color: #2c3e50; margin-bottom: 6px; }
+    .rec-action { font-size: 1.1rem; font-weight: 700; color: #27ae60; margin-bottom: 8px; }
+    .rec-detail { margin: 0 0 10px; color: #34495e; line-height: 1.6; font-size: 0.92rem; }
+    .rec-meta { margin-bottom: 10px; }
+    .rec-owner { font-size: 0.85rem; font-weight: 600; color: #7158e2; }
+    .rec-complaints { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+    .rec-complaints-label { font-size: 0.82rem; font-weight: 600; color: #7f8c8d; margin-right: 4px; }
+    .complaint-chip {
+      background: #fff3cd; color: #856404; font-size: 0.78rem; font-weight: 600;
+      padding: 3px 10px; border-radius: 12px; border: 1px solid #ffc107;
+    }
 
     .reviews-section { margin-bottom: 20px; }
     .reviews-section h3 { margin: 0 0 12px; color: #2c3e50; }
