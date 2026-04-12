@@ -45,6 +45,7 @@ export interface RatingTrendPoint {
 export interface InsightsV2Response {
   app_id: string;
   total_reviews: number;
+  playstore_rating: number | null;
   top_issues: TopIssue[];
   alerts: Alert[];
   rating_trend: RatingTrendPoint[];

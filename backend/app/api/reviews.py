@@ -31,7 +31,7 @@ router = APIRouter()
 # INGEST REVIEWS (FIXED)
 # ==============================
 @router.post("/ingest/{app_id}")
-def ingest_reviews(app_id: str, country: str = "us", lang: str = "en", count: int = 300):
+def ingest_reviews(app_id: str, country: str = "in", lang: str = "en", count: int = 300):
     db = SessionLocal()
     try:
         logger.info(f"Starting ingestion for {app_id}")

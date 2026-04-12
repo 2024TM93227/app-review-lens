@@ -2,7 +2,7 @@
 PlayStore Review Ingestion Module
 Fetches public reviews from Google Play Store for target apps
 """
-from google_play_scraper import reviews, Sort, exceptions
+from google_play_scraper import reviews, Sort, exceptions, app as gplay_app
 import logging
 from typing import List, Dict
 from datetime import datetime, timedelta
@@ -19,7 +19,7 @@ FOOD_DELIVERY_APPS = {
 }
 
 
-def fetch_reviews(app_id: str, lang: str = "en", country: str = "us", count: int = 200):
+def fetch_reviews(app_id: str, lang: str = "en", country: str = "in", count: int = 200):
     """
     Fetch reviews from Google Play Store
     Returns list of review dictionaries with metadata
@@ -120,7 +120,7 @@ def fetch_reviews_incremental(app_id: str, days: int = 7):
             data, continuation_token = reviews(
                 app_id,
                 lang="en",
-                country="us",
+                country="in",
                 sort=Sort.NEWEST,
                 count=100,
                 continuation_token=continuation_token
@@ -160,3 +160,22 @@ def validate_review(review: Dict) -> bool:
         return False
     # Some apps may not always include version metadata
     return True
+
+
+def fetch_app_rating(app_id: str, lang: str = "en", country: str = "in") -> dict:
+    """
+    Fetch the actual Play Store app rating and metadata.
+    Returns dict with 'score' (overall rating), 'ratings' (count), 'installs', etc.
+    """
+    try:
+        result = gplay_app(app_id, lang=lang, country=country)
+        return {
+            "score": result.get("score"),           # e.g. 4.2
+            "ratings": result.get("ratings"),       # total rating count
+            "reviews_count": result.get("reviews"), # total review count
+            "installs": result.get("installs"),
+            "title": result.get("title"),
+        }
+    except Exception as e:
+        logger.error(f"Error fetching app info for {app_id}: {e}")
+        return {}

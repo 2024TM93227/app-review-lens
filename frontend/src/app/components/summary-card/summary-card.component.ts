@@ -91,8 +91,11 @@ export class SummaryCardComponent {
   @Input() totalReviews = 0;
   @Input() ratingTrend: RatingTrendPoint[] = [];
   @Input() topIssue: TopIssue | null = null;
+  @Input() playstoreRating: number | null = null;
 
   get currentRating(): number {
+    // Use actual Play Store rating if available, otherwise fall back to trend average
+    if (this.playstoreRating != null) return this.playstoreRating;
     if (this.ratingTrend.length === 0) return 0;
     return this.ratingTrend[this.ratingTrend.length - 1].avg_rating;
   }

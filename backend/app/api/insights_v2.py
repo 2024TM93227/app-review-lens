@@ -14,6 +14,7 @@ from app.services.prioritization import aggregate_issues
 from app.services.alerts import detect_alerts
 from app.services.trends import build_sentiment_trend
 from app.services.sentiment import analyze_sentiment_v2
+from app.services.playstore_scraper import fetch_app_rating
 
 logger = logging.getLogger(__name__)
 
@@ -75,9 +76,14 @@ def get_insights_v2(app_id: str, days: int = 30):
         # Rating trend (daily)
         rating_trend = _build_rating_trend(review_dicts)
 
+        # Fetch actual Play Store rating
+        app_info = fetch_app_rating(app_id)
+        playstore_rating = app_info.get("score")
+
         return {
             "app_id": app_id,
             "total_reviews": len(reviews),
+            "playstore_rating": playstore_rating,
             "top_issues": top_issues,
             "alerts": alerts,
             "rating_trend": rating_trend,

@@ -49,6 +49,7 @@ export class DashboardComponent implements OnInit {
   alerts: Alert[] = [];
   ratingTrend: RatingTrendPoint[] = [];
   totalReviews = 0;
+  playstoreRating: number | null = null;
 
   // V1 data (kept for sentiment chart)
   stats: any = {};
@@ -117,6 +118,7 @@ export class DashboardComponent implements OnInit {
         this.alerts = data.alerts || [];
         this.ratingTrend = data.rating_trend || [];
         this.totalReviews = data.total_reviews || 0;
+        this.playstoreRating = data.playstore_rating || null;
         this.loading = false;
       },
       error: () => {
