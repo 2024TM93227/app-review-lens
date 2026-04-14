@@ -203,9 +203,14 @@ export class DashboardComponent implements OnInit {
     const score = review.sentiment_score;
     const rating = review.rating;
 
-    // Rating override: low ratings should never show as positive
+    // Rating override: rating and sentiment must be consistent
     if (typeof rating === 'number') {
       if (rating <= 2) return 'negative';
+      if (rating >= 4) {
+        // 4-5 star reviews should never show as negative
+        if (typeof score === 'number' && score < 0.4) return 'neutral';
+        return typeof score === 'number' && score > 0.6 ? 'positive' : 'neutral';
+      }
       if (rating === 3) {
         if (typeof score === 'number' && score > 0.6) return 'neutral';
       }

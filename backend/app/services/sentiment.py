@@ -187,10 +187,12 @@ def analyze_sentiment_v2(text: str, rating: int = None) -> Tuple[str, float]:
     if rating is not None:
         if rating <= 2 and label != "negative":
             label = "negative"
-            # Pull score toward negative: blend text score with rating-implied score
             score = min(score, 0.35)
         elif rating == 3 and label == "positive":
             label = "neutral"
             score = min(score, 0.50)
+        elif rating >= 4 and label == "negative":
+            label = "neutral"
+            score = max(score, 0.45)
 
     return label, score
