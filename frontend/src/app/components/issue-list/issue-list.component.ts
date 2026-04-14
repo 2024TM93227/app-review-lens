@@ -35,8 +35,13 @@ import { TopIssue } from '../../models/insights.model';
               </td>
               <td>
                 <div class="impact-bar-wrapper">
-                  <div class="impact-bar" [style.width.%]="issue.impact" [ngClass]="getImpactClass(issue.impact)"></div>
-                  <span class="impact-value">{{ issue.impact }}</span>
+                  <div
+                    class="impact-bar"
+                    [style.width.%]="issue.impact"
+                    [ngClass]="getImpactClass(issue.impact)"
+                    [title]="getImpactTooltip(issue)">
+                  </div>
+                  <span class="impact-value" [title]="getImpactTooltip(issue)">{{ issue.impact }}</span>
                 </div>
               </td>
               <td class="recommendation-cell">
@@ -201,5 +206,19 @@ export class IssueListComponent {
     if (severity > 5) return 'high';
     if (severity > 3) return 'medium';
     return 'low';
+  }
+
+  getImpactTooltip(issue: TopIssue): string {
+    const b = issue.impact_breakdown;
+    if (!b) {
+      return `Impact ${issue.impact}`;
+    }
+
+    return [
+      `Impact ${issue.impact}`,
+      `Frequency contribution: ${b.frequency}`,
+      `Severity contribution: ${b.severity}`,
+      `Negativity contribution: ${b.negativity}`,
+    ].join('\n');
   }
 }

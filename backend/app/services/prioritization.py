@@ -232,6 +232,10 @@ def aggregate_issues(reviews: List[Dict]) -> List[Dict]:
         if cat and cat != "uncategorized":
             buckets[cat].append(r)
 
+    # Normalize frequency relative to the most mentioned issue in this slice.
+    # This prevents small categories from saturating frequency score too early.
+    max_frequency = max((len(cat_reviews) for cat_reviews in buckets.values()), default=1)
+
     issues = []
     for cat in get_all_categories():
         cat_reviews = buckets.get(cat, [])
@@ -251,9 +255,14 @@ def aggregate_issues(reviews: List[Dict]) -> List[Dict]:
         avg_rating = sum(ratings) / freq
 
         # Weighted impact: frequency_norm * 0.5 + avg_severity_norm * 0.3 + (1 - avg_sentiment) * 0.2
-        freq_norm = min(freq / max(total_reviews * 0.3, 1), 1.0)
+        # Frequency is normalized against the max issue frequency in the same cohort.
+        # This preserves rank separation between categories (e.g., 3 vs 10 mentions).
+        freq_norm = freq / max(max_frequency, 1)
         severity_norm = avg_severity / 10.0
-        impact = round((freq_norm * 0.5 + severity_norm * 0.3 + (1.0 - avg_sentiment) * 0.2) * 100, 1)
+        freq_contrib = round(freq_norm * 0.5 * 100, 1)
+        severity_contrib = round(severity_norm * 0.3 * 100, 1)
+        negativity_contrib = round((1.0 - avg_sentiment) * 0.2 * 100, 1)
+        impact = round(freq_contrib + severity_contrib + negativity_contrib, 1)
 
         # Trend: compare last 7d vs previous 7d
         recent_cutoff = now - timedelta(days=7)
@@ -290,6 +299,11 @@ def aggregate_issues(reviews: List[Dict]) -> List[Dict]:
         issues.append({
             "name": cat,
             "impact": impact,
+            "impact_breakdown": {
+                "frequency": freq_contrib,
+                "severity": severity_contrib,
+                "negativity": negativity_contrib,
+            },
             "trend": trend,
             "affected_users": affected_pct,
             "frequency": freq,

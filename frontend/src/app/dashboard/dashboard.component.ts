@@ -112,9 +112,17 @@ export class DashboardComponent implements OnInit {
     // V2: Load insights
     this.api.getInsightsV2(this.appId, this.currentFilters.days).subscribe({
       next: (data: InsightsV2Response) => {
-        this.topIssues = (data.top_issues || []).filter(
+        const filteredIssues = (data.top_issues || []).filter(
           issue => issue.avg_sentiment < 0.4
         );
+
+        // Keep ranks contiguous in the UI after client-side filtering.
+        this.topIssues = filteredIssues
+          .sort((a, b) => b.impact - a.impact)
+          .map((issue, index) => ({
+            ...issue,
+            rank: index + 1,
+          }));
         this.alerts = data.alerts || [];
         this.ratingTrend = data.rating_trend || [];
         this.totalReviews = data.total_reviews || 0;

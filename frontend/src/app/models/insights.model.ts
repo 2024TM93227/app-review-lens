@@ -5,6 +5,7 @@
 export interface TopIssue {
   name: string;
   impact: number;
+  impact_breakdown?: ImpactBreakdown;
   trend: 'up' | 'down' | 'stable';
   affected_users: number;
   frequency: number;
@@ -17,6 +18,12 @@ export interface TopIssue {
   recommendation_detail: string;
   recommendation_owner: string;
   top_complaints: string[];
+}
+
+export interface ImpactBreakdown {
+  frequency: number;
+  severity: number;
+  negativity: number;
 }
 
 export interface ExampleReview {
