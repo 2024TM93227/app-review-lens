@@ -146,6 +146,18 @@ def get_issue_detail(app_id: str, issue_name: str, days: int = 30):
         # Data-driven recommendation
         recommendation = generate_smart_recommendation(issue_name, issue_reviews)
 
+        def _ts_key(r: dict):
+            ts = r.get("timestamp")
+            if isinstance(ts, str):
+                try:
+                    ts = datetime.fromisoformat(ts)
+                except ValueError:
+                    ts = None
+            return ts or datetime.min
+
+        # Show newest comments first in issue deep-dive.
+        recent_reviews = sorted(issue_reviews, key=_ts_key, reverse=True)[:50]
+
         return {
             "issue_name": issue_name,
             "app_id": app_id,
@@ -171,7 +183,7 @@ def get_issue_detail(app_id: str, issue_name: str, days: int = 30):
                     "app_version": r.get("app_version"),
                     "severity": calculate_severity(r["rating"], r["sentiment_score"], r["text"]),
                 }
-                for r in sorted(issue_reviews, key=lambda x: x.get("sentiment_score", 1))[:50]
+                for r in recent_reviews
             ],
         }
     except HTTPException:

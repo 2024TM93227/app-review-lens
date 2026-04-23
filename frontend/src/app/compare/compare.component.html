@@ -43,6 +43,26 @@
       <div class="progress-label">Ingesting reviews: {{ ingestProgress }}%</div>
     </div>
 
+    <section class="panel trend-legend-panel" *ngIf="!loading">
+      <div class="panel-heading">
+        <b>Sentiment label legend</b>
+      </div>
+        <div class="sentiment-legend-grid">
+          <div class="sentiment-legend-item positive">
+            <strong>Positive</strong>
+            <span>Average sentiment score is 0.60 or higher.</span>
+          </div>
+          <div class="sentiment-legend-item mixed">
+            <strong>Mixed</strong>
+            <span>Average sentiment score is between 0.40 and 0.59.</span>
+          </div>
+          <div class="sentiment-legend-item negative">
+            <strong>Negative</strong>
+            <span>Average sentiment score is below 0.40.</span>
+          </div>
+        </div>
+    </section>
+
     <section class="summary-grid" *ngIf="appSummaries.length === 2">
       <article class="summary-card summary-card-overall">
         <div class="summary-topline">
@@ -76,12 +96,12 @@
             <div class="summary-card-label">{{ app.name }}</div>
             <h3>{{ app.avgRating | number:'1.1-1' }}★ rating</h3>
           </div>
-          <span class="score-pill" [ngClass]="app.sentimentClass">{{ app.sentimentLabel }}</span>
+          <span class="score-pill has-tooltip" [ngClass]="app.sentimentClass" [title]="getSentimentScoreTooltip(app)">{{ app.sentimentLabel }}</span>
         </div>
 
         <div class="stat-row">
-          <span>Composite score</span>
-          <strong>{{ app.compositeScore | number:'1.1-1' }}</strong>
+          <span class="has-tooltip" [title]="getCompositeScoreTooltip()">Composite score</span>
+          <strong class="has-tooltip" [title]="getCompositeScoreTooltip()">{{ app.compositeScore | number:'1.1-1' }}</strong>
         </div>
         <div class="stat-row">
           <span>Trend</span>
@@ -119,7 +139,7 @@
       <div class="panel-heading">
         <div>
           <div class="panel-kicker">Feature-level comparison</div>
-          <h3>Compare feature sentiment and winner by aspect</h3>
+          <h3 class="has-tooltip" [title]="getFeatureScoreFormulaTooltip()">Compare feature sentiment and winner by aspect</h3>
         </div>
         <div class="panel-heading-meta">
           <span class="consistency-badge">{{ consistencyBadgeLabel }}</span>
@@ -145,10 +165,10 @@
                 <div class="table-sub">Δ {{ row.delta | number:'1.2-2' }}</div>
               </td>
               <td>
-                <span class="value-chip" [ngClass]="row.aLabel.toLowerCase()">{{ row.aScore | number:'1.2-2' }}</span>
+                <span class="value-chip has-tooltip" [ngClass]="row.aLabel.toLowerCase()" [title]="getFeatureCellTooltip(row, 'a')">{{ row.aScore | number:'1.2-2' }}</span>
               </td>
               <td>
-                <span class="value-chip" [ngClass]="row.bLabel.toLowerCase()">{{ row.bScore | number:'1.2-2' }}</span>
+                <span class="value-chip has-tooltip" [ngClass]="row.bLabel.toLowerCase()" [title]="getFeatureCellTooltip(row, 'b')">{{ row.bScore | number:'1.2-2' }}</span>
               </td>
               <td>
                 <span class="winner-pill" [ngClass]="{ tie: row.winner === 'Tie' }">{{ row.winner }}</span>

@@ -659,4 +659,32 @@ export class CompareComponent implements OnInit {
   get consistencyBadgeLabel(): string {
     return `Consistency Check: Aligned (${this.compareLocaleLabel})`;
   }
+
+  getSentimentScoreTooltip(app: AppSummary): string {
+    return [
+      `Overall sentiment score is the average of review sentiment_score values (0 to 1).`,
+      `Label thresholds: Positive >= 0.60, Mixed 0.40-0.59, Negative < 0.40.`,
+      `Current ${app.name} score: ${app.avgSentiment.toFixed(3)}.`
+    ].join(' ');
+  }
+
+  getCompositeScoreTooltip(): string {
+    return [
+      `Composite score = Sentiment (40) + Rating (10) + Trend (20) + Issue quality (30).`,
+      `Sentiment: clamp(avgSentiment, 0..1) x 40.`,
+      `Rating: clamp(avgRating/5, 0..1) x 10.`,
+      `Trend: clamp(0.5 + 3 x sentimentDelta + 0.1 x volumeChange, 0..1) x 20.`,
+      `Issue quality: (1 - clamp(weightedNegativePct/100, 0..1)) x 30.`
+    ].join(' ');
+  }
+
+  getFeatureScoreFormulaTooltip(): string {
+    return `Feature sentiment score = positive_ratio - negative_ratio. Range is typically -1 to +1; higher is better.`;
+  }
+
+  getFeatureCellTooltip(row: FeatureComparisonRow, side: 'a' | 'b'): string {
+    const appName = side === 'a' ? this.getAppName(this.appA) : this.getAppName(this.appB);
+    const value = side === 'a' ? row.aScore : row.bScore;
+    return `${appName} ${this.formatLabel(row.feature)} score: ${value.toFixed(2)}. Computed as positive_ratio - negative_ratio for this feature.`;
+  }
 }

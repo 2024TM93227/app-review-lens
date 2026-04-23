@@ -41,6 +41,25 @@
   <!-- Main Content -->
   <div *ngIf="!loading" class="dashboard-content">
 
+    <div class="trend-legend-banner">
+      <h3>How to Read Trends</h3>
+      <div class="legend-grid">
+        <div class="legend-item improving">
+          <strong>Improving</strong>
+          <span>Down arrow means fewer complaints now than last week.</span>
+        </div>
+        <div class="legend-item stable">
+          <strong>Stable</strong>
+          <span>Right arrow means complaints are staying around the same level.</span>
+        </div>
+        <div class="legend-item declining">
+          <strong>Declining</strong>
+          <span>Up arrow means complaints are rising compared to last week.</span>
+        </div>
+      </div>
+      <p class="legend-note">For rating trend, we compare recent average rating with the previous period: higher means improving, lower means declining.</p>
+    </div>
+
     <!-- Tabs -->
     <div class="tabs">
       <button class="tab-button" [class.active]="activeTab === 'overview'" (click)="activeTab = 'overview'">
@@ -58,6 +77,7 @@
       <app-summary-card
         [totalReviews]="totalReviews"
         [ratingTrend]="ratingTrend"
+        [topIssues]="topIssues"
         [playstoreRating]="playstoreRating"
         [topIssue]="topIssues.length > 0 ? topIssues[0] : null">
       </app-summary-card>

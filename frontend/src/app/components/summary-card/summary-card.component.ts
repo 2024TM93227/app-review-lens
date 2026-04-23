@@ -23,7 +23,7 @@ import { TopIssue, RatingTrendPoint } from '../../models/insights.model';
           {{ trendIcon }}
         </div>
         <div class="card-body">
-          <div class="card-label">Rating Trend</div>
+          <div class="card-label">Overall Trend</div>
           <div class="card-value" [ngClass]="trendClass">{{ trendLabel }}</div>
         </div>
       </div>
@@ -90,6 +90,7 @@ import { TopIssue, RatingTrendPoint } from '../../models/insights.model';
 export class SummaryCardComponent {
   @Input() totalReviews = 0;
   @Input() ratingTrend: RatingTrendPoint[] = [];
+  @Input() topIssues: TopIssue[] = [];
   @Input() topIssue: TopIssue | null = null;
   @Input() playstoreRating: number | null = null;
 
@@ -122,6 +123,25 @@ export class SummaryCardComponent {
   }
 
   private get trendDirection(): string {
+    // Prefer issue-level direction because it reflects complaint movement directly.
+    if (this.topIssues.length) {
+      const issueWindow = this.topIssues.slice(0, 5);
+      const totalWeight = issueWindow.reduce((sum, issue) => sum + Math.max(1, issue.impact || 0), 0);
+
+      if (totalWeight > 0) {
+        const weightedDirection = issueWindow.reduce((sum, issue) => {
+          const weight = Math.max(1, issue.impact || 0);
+          const direction = issue.trend === 'down' ? 1 : issue.trend === 'up' ? -1 : 0;
+          return sum + (direction * weight);
+        }, 0);
+
+        const score = weightedDirection / totalWeight;
+        if (score >= 0.2) return 'up';
+        if (score <= -0.2) return 'down';
+      }
+    }
+
+    // Fallback to rating movement when issue trend signal is weak.
     if (this.ratingTrend.length < 2) return 'stable';
     const recent = this.ratingTrend[this.ratingTrend.length - 1].avg_rating;
     const prev = this.ratingTrend[this.ratingTrend.length - 2].avg_rating;

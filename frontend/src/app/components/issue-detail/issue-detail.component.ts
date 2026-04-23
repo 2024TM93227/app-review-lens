@@ -88,6 +88,31 @@ const HIGHLIGHT_KEYWORDS = [
         <!-- Trend Chart -->
         <div class="chart-section">
           <h3>📈 Sentiment Trend</h3>
+          <div class="chart-legend-box">
+            <h4>How to read this graph</h4>
+            <div class="legend-grid">
+              <div class="legend-card blue-line">
+                <strong>Blue line: Avg Sentiment</strong>
+                <span>When this goes up, user mood is getting better.</span>
+              </div>
+              <div class="legend-card red-line">
+                <strong>Red line: Negative Count</strong>
+                <span>When this goes down, fewer users are reporting problems.</span>
+              </div>
+              <div class="legend-card improving">
+                <strong>Improving</strong>
+                <span>Blue line rising and red line falling is the best sign.</span>
+              </div>
+              <div class="legend-card stable">
+                <strong>Stable</strong>
+                <span>Both lines are mostly flat, so things are steady.</span>
+              </div>
+              <div class="legend-card declining">
+                <strong>Declining</strong>
+                <span>Blue line dropping and red line rising means worsening.</span>
+              </div>
+            </div>
+          </div>
           <canvas #trendCanvas></canvas>
         </div>
 
@@ -230,6 +255,48 @@ const HIGHLIGHT_KEYWORDS = [
       box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 20px;
     }
     .chart-section h3 { margin: 0 0 16px; color: #2c3e50; }
+
+    .chart-legend-box {
+      background: #f8fbff;
+      border: 1px solid #d7e8ff;
+      border-left: 4px solid #3498db;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 14px;
+    }
+    .chart-legend-box h4 {
+      margin: 0 0 10px;
+      color: #2c3e50;
+      font-size: 0.95rem;
+    }
+    .legend-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 8px;
+    }
+    .legend-card {
+      border-radius: 6px;
+      padding: 8px;
+      border: 1px solid #e6ecf3;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .legend-card strong {
+      font-size: 0.84rem;
+      color: #2c3e50;
+    }
+    .legend-card span {
+      font-size: 0.78rem;
+      color: #5d6d7e;
+      line-height: 1.35;
+    }
+    .legend-card.blue-line { border-left: 3px solid #3498db; }
+    .legend-card.red-line { border-left: 3px solid #e74c3c; }
+    .legend-card.improving { background: #eafaf1; border-color: #cdeedc; }
+    .legend-card.stable { background: #fef5e7; border-color: #f5dfb3; }
+    .legend-card.declining { background: #fdedec; border-color: #f2cbc7; }
 
     .ai-insight-box {
       background: #eef7ff; border-left: 4px solid #3498db;

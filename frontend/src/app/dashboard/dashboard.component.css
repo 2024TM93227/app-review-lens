@@ -217,6 +217,67 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
+.trend-legend-banner {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  padding: 16px;
+  margin-bottom: 18px;
+  border-left: 4px solid #3498db;
+}
+
+.trend-legend-banner h3 {
+  margin: 0 0 10px;
+  color: #2c3e50;
+  font-size: 1.05rem;
+}
+
+.legend-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.legend-item {
+  border: 1px solid #e5eaf0;
+  border-radius: 8px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.legend-item strong {
+  font-size: 0.9rem;
+}
+
+.legend-item span {
+  font-size: 0.83rem;
+  color: #4b5973;
+  line-height: 1.35;
+}
+
+.legend-item.improving {
+  background: #eafaf1;
+  border-color: #b8eecf;
+}
+
+.legend-item.stable {
+  background: #fef5e7;
+  border-color: #f6d9a6;
+}
+
+.legend-item.declining {
+  background: #fdedec;
+  border-color: #f3c4bf;
+}
+
+.legend-note {
+  margin: 10px 0 0;
+  font-size: 0.82rem;
+  color: #5a6780;
+}
+
 .tab-button {
   padding: 12px 24px;
   border: none;
@@ -594,6 +655,10 @@
   .controls-panel {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .legend-grid {
+    grid-template-columns: 1fr;
   }
 
   .action-buttons {
