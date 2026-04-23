@@ -232,7 +232,8 @@ export class CompareComponent implements OnInit {
           this.featureRows,
           issueMap,
         );
-        this.opportunities = this.buildOpportunities(this.featureRows, this.painPointRows);
+        this.opportunities = this.buildOpportunities(this.featureRows, this.painPointRows)
+          .sort((a, b) => this.severityRank(a.severity) - this.severityRank(b.severity));
         this.contextSignals = this.buildContextSignals(reviewsA, reviewsB);
         this.overallWinner = this.getOverallWinner(this.appSummaries);
         this.overallMargin = this.getOverallMargin(this.appSummaries);
@@ -349,7 +350,12 @@ export class CompareComponent implements OnInit {
       strengths: this.extractStrengths(appId, featureRows),
       weaknesses: this.extractWeaknesses(appId, featureRows),
       mismatchSignals: this.buildMismatchSignals(reviews),
-      localeSignals: this.topSignals(reviews.map(review => review.locale).filter(Boolean) as string[], 2),
+      localeSignals: this.topSignals(
+        reviews
+          .map(review => review.locale)
+          .filter((value): value is string => !!value && value.toUpperCase() !== 'EN_US'),
+        2,
+      ),
       versionSignals: this.topSignals(reviews.map(review => review.app_version).filter(Boolean) as string[], 2),
     };
   }
@@ -608,6 +614,16 @@ export class CompareComponent implements OnInit {
       return 'Tie';
     }
     return aScore < bScore ? this.getAppName(aName) : this.getAppName(bName);
+  }
+
+  private severityRank(severity: OpportunityCard['severity']): number {
+    if (severity === 'high') {
+      return 0;
+    }
+    if (severity === 'medium') {
+      return 1;
+    }
+    return 2;
   }
 
   private average(values: number[]): number {

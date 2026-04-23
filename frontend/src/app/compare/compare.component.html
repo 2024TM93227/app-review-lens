@@ -146,11 +146,9 @@
               </td>
               <td>
                 <span class="value-chip" [ngClass]="row.aLabel.toLowerCase()">{{ row.aScore | number:'1.2-2' }}</span>
-                <div class="value-note">{{ row.aLabel }}</div>
               </td>
               <td>
                 <span class="value-chip" [ngClass]="row.bLabel.toLowerCase()">{{ row.bScore | number:'1.2-2' }}</span>
-                <div class="value-note">{{ row.bLabel }}</div>
               </td>
               <td>
                 <span class="winner-pill" [ngClass]="{ tie: row.winner === 'Tie' }">{{ row.winner }}</span>
