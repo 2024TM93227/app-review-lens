@@ -7,6 +7,7 @@ from app.db.session import engine
 from app.api import reviews, insights, compare
 from app.api import ai
 from app.api import insights_v2
+from app.api import policy
 from app.services.background_worker import start_background_scheduler, stop_background_scheduler, is_scheduler_running
 
 logger = logging.getLogger(__name__)
@@ -27,6 +28,7 @@ app.include_router(insights.router, prefix="/insights")
 app.include_router(compare.router, prefix="/compare")
 app.include_router(ai.router, prefix="/ai")
 app.include_router(insights_v2.router, prefix="/v2/insights")
+app.include_router(policy.router, prefix="/policy")
 
 
 @app.on_event("startup")

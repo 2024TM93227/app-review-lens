@@ -19,6 +19,7 @@ from app.services.classification import classify_issue
 from app.services.sentiment import analyze_sentiment_v2
 from app.services.severity import calculate_severity
 from app.services.preprocessing import preprocess_review
+from app.services.responsible_ai import maybe_store_raw_payload, scrub_author, scrub_text_pii
 from app.db.session import SessionLocal
 from app.models.review import Review, AspectSentiment
 from app.services.trends import build_sentiment_trend
@@ -55,7 +56,9 @@ def ingest_reviews(app_id: str, country: str = "in", lang: str = "en", count: in
                 if not validate_review(review_data):
                     continue
 
-                text = review_data.get("content", "").strip()
+                raw_text = review_data.get("content", "").strip()
+                scrubbed = scrub_text_pii(raw_text)
+                text = scrubbed.text
                 if len(text) < 3:
                     continue
 
@@ -71,6 +74,8 @@ def ingest_reviews(app_id: str, country: str = "in", lang: str = "en", count: in
                     existing.issue_category = classify_issue(text)
                     existing.severity = calculate_severity(existing.rating or 3, existing.sentiment_score, text)
                     existing.timestamp = timestamp
+                    if scrubbed.entities:
+                        existing.processing_status = "processed_pii_scrubbed"
                     updated += 1
                     continue
 
@@ -90,7 +95,7 @@ def ingest_reviews(app_id: str, country: str = "in", lang: str = "en", count: in
                     rating=review_data.get("score"),
                     text=text,
                     cleaned_text=cleaned_text,
-                    author=review_data.get("userName"),
+                    author=scrub_author(review_data.get("userName")),
                     app_version=review_data.get("reviewCreatedVersion"),
                     locale=f"{lang}_{country.upper()}",
                     device_info=review_data.get("device"),
@@ -104,8 +109,8 @@ def ingest_reviews(app_id: str, country: str = "in", lang: str = "en", count: in
                     severity=severity_score,
                     is_spam=is_spam,
                     is_processed=True,
-                    processing_status="processed",
-                    raw_data=normalize_review_for_storage(review_data)
+                    processing_status="processed_pii_scrubbed" if scrubbed.entities else "processed",
+                    raw_data=maybe_store_raw_payload(normalize_review_for_storage(review_data)),
                 )
 
                 db.add(review_record)

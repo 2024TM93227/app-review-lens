@@ -6,6 +6,8 @@ from typing import Any, Dict
 import os
 import logging
 
+from app.services.responsible_ai import sanitize_llm_payload
+
 logger = logging.getLogger(__name__)
 
 try:
@@ -31,9 +33,12 @@ def generate_suggestions(payload: Dict[str, Any], model: str = 'gpt-3.5-turbo') 
         raise RuntimeError('openai package not installed')
 
     openai.api_key = api_key
+    safe_payload = sanitize_llm_payload(payload)
 
     system_prompt = (
         "You are an expert product manager helping prioritize app store review issues. "
+        "Do not infer or fabricate personal data. "
+        "Treat all identifiers as redacted placeholders. "
         "Given comparison data, aspect sentiment diffs, top issues and trends, produce:\n"
         "1) A concise executive summary (1-2 sentences),\n"
         "2) A prioritized list of 3 action items with rationale and estimated impact,\n"
@@ -43,7 +48,7 @@ def generate_suggestions(payload: Dict[str, Any], model: str = 'gpt-3.5-turbo') 
     )
 
     # Build user content with a compact representation of the payload
-    user_content = f"Context payload:\n{payload}\n\nRespond in JSON only."
+    user_content = f"Context payload:\n{safe_payload}\n\nRespond in JSON only."
 
     try:
         resp = openai.ChatCompletion.create(

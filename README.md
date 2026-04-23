@@ -185,8 +185,34 @@ The system compares the last 7 days against the previous 7 days. If negative rev
 | `GET` | `/` | Health check |
 | `GET` | `/compare/sentiment?apps=app1,app2` | Compare sentiment across apps |
 | `POST` | `/insights/generate/{app_id}` | Generate V1 insights |
+| `GET` | `/policy/responsible-ai` | Active Responsible AI controls and policy manifest |
 
 Full API docs available at **http://localhost:8000/docs** (Swagger UI) when the backend is running.
+
+---
+
+## Responsible AI Policy (Implemented)
+
+The backend now enforces privacy-first Responsible AI controls by default:
+
+- **PII scrubbing on ingest**: emails, phone numbers, payment-like numbers, UPI handles, IPs, and order IDs are redacted from review text before storage.
+- **Pseudonymized authors**: reviewer names are pseudonymized by default.
+- **Raw payload minimization**: raw provider payload storage is disabled by default to reduce retention risk.
+- **PII-safe LLM prompting**: payloads are scrubbed before they are sent to LLM endpoints.
+- **Policy transparency endpoint**: current active controls are visible via `/policy/responsible-ai`.
+
+Environment flags:
+
+- `RAI_PII_SCRUB=true|false`
+- `RAI_SCRUB_EMAIL=true|false`
+- `RAI_SCRUB_PHONE=true|false`
+- `RAI_SCRUB_CARD=true|false`
+- `RAI_SCRUB_UPI=true|false`
+- `RAI_SCRUB_IP=true|false`
+- `RAI_SCRUB_ORDER_ID=true|false`
+- `RAI_STORE_RAW_PAYLOAD=true|false` (default: false)
+- `RAI_STORE_AUTHOR=true|false` (default: false)
+- `RAI_LLM_SCRUB=true|false`
 
 ---
 
