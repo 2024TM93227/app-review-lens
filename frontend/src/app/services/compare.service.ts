@@ -23,7 +23,7 @@ export class CompareService {
     return this.http.post<any>(`${this.base}/compare/aspects`, { apps });
   }
 
-  ingestReviews(appId: string, country: string = 'us', lang: string = 'en', count: number = 100) {
+  ingestReviews(appId: string, country: string = 'in', lang: string = 'en', count: number = 100) {
     return this.http.post<any>(`${this.base}/reviews/ingest/${appId}?country=${country}&lang=${lang}&count=${count}`, {});
   }
 
@@ -41,5 +41,13 @@ export class CompareService {
       params = params.append('competitor_apps', app);
     });
     return this.http.get<any>(`${this.base}/compare/feature-gap`, { params });
+  }
+
+  getTrends(appId: string, days: number = 30) {
+    return this.http.get<any>(`${this.base}/reviews/app/${appId}/trends?days=${days}`);
+  }
+
+  listReviews(appId: string, days: number = 30, limit: number = 100) {
+    return this.http.get<any>(`${this.base}/reviews/app/${appId}/list?days=${days}&limit=${limit}`);
   }
 }

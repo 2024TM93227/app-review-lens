@@ -1,102 +1,244 @@
 <div class="compare-page">
-<header class="app-header">
+  <header class="app-header">
     <div class="app-header-box">
       <h1>App Review Lens</h1>
       <p>High-impact product intelligence from live app reviews</p>
     </div>
   </header>
 
-  <div class="compare-controls">
-    <select [(ngModel)]="appA">
-      <option *ngFor="let app of monitoredApps" [value]="app.id">
-        {{ app.name }}
-      </option>
-    </select>
+  <main class="compare-shell">
+    
 
-    <select [(ngModel)]="appB">
-      <option *ngFor="let app of monitoredApps" [value]="app.id">
-        {{ app.name }}
-      </option>
-    </select>
+    <section class="compare-controls">
+      <div class="control-group">
+        <label>App A</label>
+        <select [(ngModel)]="appA">
+          <option *ngFor="let app of monitoredApps" [value]="app.id">
+            {{ app.name }}
+          </option>
+        </select>
+      </div>
 
-    <div class="compare-actions">
-      <button (click)="compare()">Ingest & Compare</button>
-      <button (click)="goToDashboard()" class="btn-secondary">Dashboard</button>
-    </div>
-  </div>
+      <div class="control-group">
+        <label>App B</label>
+        <select [(ngModel)]="appB">
+          <option *ngFor="let app of monitoredApps" [value]="app.id">
+            {{ app.name }}
+          </option>
+        </select>
+      </div>
 
-  <div *ngIf="loading" class="status">{{ status }}</div>
-  <div *ngIf="error" class="error">❌ {{ error }}</div>
+      <div class="compare-actions">
+        <button (click)="compare()" [disabled]="loading || isIngesting">Ingest &amp; Compare</button>
+        <button (click)="goToDashboard()" class="btn-secondary">Dashboard</button>
+      </div>
+    </section>
 
-  <!-- USER SIGNALS -->
-  <div *ngIf="userSignals[appA]" class="compare-summary">
-
-    <div class="card">
-      <!-- <h3>{{ getAppName(appA) }}</h3>
-
-      <p><strong>👍 Likes</strong></p>
-      <ul>
-        <li *ngFor="let p of userSignals[appA].positives">{{ p }}</li>
-      </ul>
-
-      <p><strong>👎 Complaints</strong></p>
-      <ul>
-        <li *ngFor="let n of userSignals[appA].negatives">{{ n }}</li>
-      </ul>
+    <div *ngIf="loading" class="status status-loading">{{ status }}</div>
+    <div *ngIf="error" class="error">❌ {{ error }}</div>
+    <div *ngIf="ingestProgress > 0 && isIngesting" class="progress-shell" aria-label="ingest progress">
+      <div class="progress-track">
+        <div class="progress-fill" [style.width.%]="ingestProgress"></div>
+      </div>
+      <div class="progress-label">Ingesting reviews: {{ ingestProgress }}%</div>
     </div>
 
-    <div class="card">
-      <h3>{{ getAppName(appB) }}</h3>
+    <section class="summary-grid" *ngIf="appSummaries.length === 2">
+      <article class="summary-card summary-card-overall">
+        <div class="summary-topline">
+          <div class="summary-card-label">Executive take</div>
+          <div class="exec-badge" *ngIf="overallWinner !== 'Tie'">Leader: {{ overallWinner }} ({{ overallMargin | number:'1.1-1' }} pts)</div>
+          <div class="exec-badge neutral" *ngIf="overallWinner === 'Tie'">Close match</div>
+        </div>
+        <h3>{{ overallWinner === 'Tie' ? 'Balanced comparison' : overallWinner + ' leads overall' }}</h3>
+        <p class="exec-summary-copy" style="color: white;">
+          {{ executiveSummary }}
+        </p>
+        <div class="exec-highlight-row" *ngIf="featureRows.length">
+          <div class="exec-highlight">
+            <span class="exec-highlight-label">Top differentiator</span>
+            <strong>{{ formatLabel(featureRows[0].feature) }}</strong>
+          </div>
+          <div class="exec-highlight">
+            <span class="exec-highlight-label">Score gap</span>
+            <strong>{{ featureRows[0].delta | number:'1.2-2' }}</strong>
+          </div>
+          <div class="exec-highlight" *ngIf="opportunities.length">
+            <span class="exec-highlight-label">Best next move</span>
+            <strong>{{ opportunities[0].title }}</strong>
+          </div>
+        </div>
+      </article>
 
-      <p><strong>👍 Likes</strong></p>
-      <ul>
-        <li *ngFor="let p of userSignals[appB].positives">{{ p }}</li>
-      </ul>
+      <article class="summary-card" *ngFor="let app of appSummaries">
+        <div class="summary-card-header">
+          <div>
+            <div class="summary-card-label">{{ app.name }}</div>
+            <h3>{{ app.avgRating | number:'1.1-1' }}★ rating</h3>
+          </div>
+          <span class="score-pill" [ngClass]="app.sentimentClass">{{ app.sentimentLabel }}</span>
+        </div>
 
-      <p><strong>👎 Complaints</strong></p>
-      <ul>
-        <li *ngFor="let n of userSignals[appB].negatives">{{ n }}</li>
+        <div class="stat-row">
+          <span>Composite score</span>
+          <strong>{{ app.compositeScore | number:'1.1-1' }}</strong>
+        </div>
+        <div class="stat-row">
+          <span>Trend</span>
+          <strong [ngClass]="app.trendClass">{{ app.trendLabel }}</strong>
+        </div>
+        <div class="stat-row">
+          <span>Reviews</span>
+          <strong>{{ app.totalReviews }}</strong>
+        </div>
+        <div class="stat-row">
+          <span>Volume shift</span>
+          <strong>{{ app.volumeChange | number:'1.1-1' }}</strong>
+        </div>
+
+        <div class="mini-columns">
+          <div>
+            <div class="mini-title">Strengths</div>
+            <ul>
+              <li *ngFor="let strength of app.strengths">{{ strength }}</li>
+              <li *ngIf="!app.strengths.length">No clear lead yet</li>
+            </ul>
+          </div>
+          <div>
+            <div class="mini-title">Weaknesses</div>
+            <ul>
+              <li *ngFor="let weakness of app.weaknesses">{{ weakness }}</li>
+              <li *ngIf="!app.weaknesses.length">No major weakness detected</li>
+            </ul>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <section class="panel" *ngIf="featureRows.length">
+      <div class="panel-heading">
+        <div>
+          <div class="panel-kicker">Feature-level comparison</div>
+          <h3>Compare feature sentiment and winner by aspect</h3>
+        </div>
+        <div class="panel-heading-meta">
+          <span class="consistency-badge">{{ consistencyBadgeLabel }}</span>
+          <p>Rows driving opportunity cards: {{ featureGapCountForAppA }} feature gaps + {{ painGapCountForAppA }} pain-point gaps.</p>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table class="comparison-table">
+          <thead>
+            <tr>
+              <th>Feature</th>
+              <th>{{ getAppName(appA) }}</th>
+              <th>{{ getAppName(appB) }}</th>
+              <th>Winner</th>
+              <th>Why</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of featureRows">
+              <td>
+                <div class="table-title">{{ formatLabel(row.feature) }}</div>
+                <div class="table-sub">Δ {{ row.delta | number:'1.2-2' }}</div>
+              </td>
+              <td>
+                <span class="value-chip" [ngClass]="row.aLabel.toLowerCase()">{{ row.aScore | number:'1.2-2' }}</span>
+                <div class="value-note">{{ row.aLabel }}</div>
+              </td>
+              <td>
+                <span class="value-chip" [ngClass]="row.bLabel.toLowerCase()">{{ row.bScore | number:'1.2-2' }}</span>
+                <div class="value-note">{{ row.bLabel }}</div>
+              </td>
+              <td>
+                <span class="winner-pill" [ngClass]="{ tie: row.winner === 'Tie' }">{{ row.winner }}</span>
+              </td>
+              <td class="explain-cell">{{ row.explanation }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel" *ngIf="opportunities.length">
+      <div class="panel-heading">
+        <div>
+          <div class="panel-kicker">Competitive opportunities</div>
+          <h3>Where {{ getAppName(appA) }} can close gap vs {{ getAppName(appB) }}</h3>
+        </div>
+        <p>These cards are generated from the same feature and pain-point comparisons shown above.</p>
+      </div>
+
+      <div class="opportunity-grid">
+        <article class="opportunity-card" *ngFor="let item of opportunities">
+          <div class="opportunity-top">
+            <span class="severity-pill" [ngClass]="item.severity">{{ item.severity }}</span>
+            <span class="opportunity-app">{{ item.app }}</span>
+          </div>
+          <h4>{{ item.title }}</h4>
+          <p>{{ item.detail }}</p>
+          <div class="opportunity-evidence" *ngIf="item.evidence">{{ item.evidence }}</div>
+        </article>
+      </div>
+    </section>
+
+    <section class="panel" *ngIf="actionItems.length">
+      <div class="panel-heading">
+        <div>
+          <div class="panel-kicker">What to fix</div>
+          <h3>Decision-ready actions for the roadmap</h3>
+        </div>
+      </div>
+
+      <ul class="action-list">
+        <li *ngFor="let item of actionItems">{{ item }}</li>
       </ul>
+    </section>
+
+    <section class="panel" *ngIf="contextSignals.length">
+      <div class="panel-heading">
+        <div>
+          <div class="panel-kicker">Explainability and context</div>
+          <h3>Why the comparison looks the way it does</h3>
+        </div>
+        <p>These signals expose rating mismatches and metadata-based segmentation that often hide in dashboards.</p>
+      </div>
+
+      <div class="context-grid">
+        <article class="context-card" *ngFor="let signal of contextSignals">
+          <h4>{{ signal.title }}</h4>
+          <p>{{ signal.detail }}</p>
+        </article>
+
+        <article class="context-card">
+          <h4>Metadata segmentation</h4>
+          <p *ngIf="appSummaries[0]?.localeSignals.length || appSummaries[0]?.versionSignals.length || appSummaries[1]?.localeSignals.length || appSummaries[1]?.versionSignals.length; else noMetadata">
+            Locale and app version signals help show which cohorts are driving the comparison.
+          </p>
+          <ng-template #noMetadata>
+            <p>No strong locale or version clusters detected in the current sample.</p>
+          </ng-template>
+        </article>
+
+        <article class="context-card" *ngFor="let app of appSummaries">
+          <h4>{{ app.name }} context</h4>
+          <p><strong>Locales:</strong> {{ app.localeSignals.length ? app.localeSignals.join(', ') : 'Not enough data' }}</p>
+          <p><strong>Versions:</strong> {{ app.versionSignals.length ? app.versionSignals.join(', ') : 'Not enough data' }}</p>
+          <p><strong>Mismatches:</strong> {{ app.mismatchSignals.join(' · ') }}</p>
+        </article>
+      </div>
+    </section>
+
+    <div *ngIf="!loading && !error && !featureRows.length && !appSummaries.length" class="empty-state">
+      Run a compare to populate feature gaps, pain points, and competitive opportunities.
     </div>
+  </main>
 
-  </div> -->
-
-  
-
-  <!-- TABLE -->
-  <div *ngIf="comparisonRows.length" class="section">
-    <h3>Aspect Comparison</h3>
-
-    <table class="nice-table">
-      <tr>
-        <th>Aspect</th>
-        <th>{{ getAppName(appA) }}</th>
-        <th>{{ getAppName(appB) }}</th>
-        <th>Winner</th>
-      </tr>
-
-      <tr *ngFor="let row of comparisonRows">
-        <td>{{ toTitleCase(row.aspect) }}</td>
-        <td class="center">{{ row.aScore | number:'1.2-2' }}</td>
-        <td class="center">{{ row.bScore | number:'1.2-2' }}</td>
-        <td class="center">{{ row.winner }}</td>
-      </tr>
-    </table>
-  </div>
-  </div>
-
-  <!-- ACTION -->
-  <div *ngIf="actionItems.length" class="section">
-    <h3>🎯 What to Fix</h3>
-    <ul>
-      <li *ngFor="let item of actionItems">{{ item }}</li>
-    </ul>
-  </div>
-  
-
-</div>
-<footer class="app-footer">
+  <footer class="app-footer">
     <div class="app-footer-box">
       <p>App Review Lens • Actionable review insights for product teams.</p>
     </div>
   </footer>
+</div>

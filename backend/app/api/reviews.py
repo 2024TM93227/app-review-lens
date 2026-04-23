@@ -194,6 +194,7 @@ def list_reviews(
                 "issue_category": r.issue_category,
                 "severity": r.severity,
                 "app_version": r.app_version,
+                "locale": r.locale,
                 "timestamp": r.timestamp.isoformat() if r.timestamp else None
             }
 

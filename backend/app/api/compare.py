@@ -128,7 +128,7 @@ def compare_overall_sentiment(apps: List[str] = Query(...)):
                 'avg_rating': sum(ratings) / len(ratings),
                 'avg_sentiment_score': sum(sentiments) / len(sentiments),
                 'rating_distribution': {
-                    str(i): sentiment_labels.count(i) for i in range(1, 6)
+                    str(i): ratings.count(i) for i in range(1, 6)
                 },
                 'sentiment_distribution': {
                     'positive': sentiment_labels.count('positive'),
