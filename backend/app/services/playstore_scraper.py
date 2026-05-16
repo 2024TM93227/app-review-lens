@@ -166,16 +166,32 @@ def fetch_app_rating(app_id: str, lang: str = "en", country: str = "in") -> dict
     """
     Fetch the actual Play Store app rating and metadata.
     Returns dict with 'score' (overall rating), 'ratings' (count), 'installs', etc.
+    Uses exponential backoff retry on network failures.
     """
-    try:
-        result = gplay_app(app_id, lang=lang, country=country)
-        return {
-            "score": result.get("score"),           # e.g. 4.2
-            "ratings": result.get("ratings"),       # total rating count
-            "reviews_count": result.get("reviews"), # total review count
-            "installs": result.get("installs"),
-            "title": result.get("title"),
-        }
-    except Exception as e:
-        logger.error(f"Error fetching app info for {app_id}: {e}")
-        return {}
+    import time
+    max_retries = 3
+    retry_delay = 1
+    
+    for attempt in range(max_retries):
+        try:
+            result = gplay_app(app_id, lang=lang, country=country)
+            if result and result.get("score"):
+                logger.info(f"Successfully fetched rating for {app_id}: {result.get('score')}")
+                return {
+                    "score": result.get("score"),           # e.g. 4.2
+                    "ratings": result.get("ratings"),       # total rating count
+                    "reviews_count": result.get("reviews"), # total review count
+                    "installs": result.get("installs"),
+                    "title": result.get("title"),
+                }
+            else:
+                logger.warning(f"Empty result for {app_id} on attempt {attempt + 1}/{max_retries}")
+        except Exception as e:
+            logger.warning(f"Attempt {attempt + 1}/{max_retries} failed for {app_id}: {str(e)}")
+            if attempt < max_retries - 1:
+                time.sleep(retry_delay)
+                retry_delay *= 2  # Exponential backoff
+            else:
+                logger.error(f"Failed to fetch app info for {app_id} after {max_retries} attempts")
+    
+    return {}

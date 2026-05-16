@@ -12,6 +12,7 @@ from pydantic import BaseModel
 from app.db.session import SessionLocal
 from app.models.review import Review, AspectSentiment
 from app.models.insight import CompetitorComparison
+from app.services.playstore_scraper import fetch_app_rating
 
 logger = logging.getLogger(__name__)
 
@@ -122,10 +123,16 @@ def compare_overall_sentiment(apps: List[str] = Query(...)):
             sentiments = [r.sentiment_score for r in reviews]
             ratings = [r.rating for r in reviews]
             sentiment_labels = [r.sentiment for r in reviews]
+            app_info = fetch_app_rating(app_id)
+            playstore_rating = app_info.get('score')
+
+            if not playstore_rating and ratings:
+                playstore_rating = round(sum(ratings) / len(ratings), 1)
             
             comparison[app_id] = {
                 'total_reviews': len(reviews),
-                'avg_rating': sum(ratings) / len(ratings),
+                'avg_rating': round(sum(ratings) / len(ratings), 2),
+                'playstore_rating': playstore_rating,
                 'avg_sentiment_score': sum(sentiments) / len(sentiments),
                 'rating_distribution': {
                     str(i): ratings.count(i) for i in range(1, 6)

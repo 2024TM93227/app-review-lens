@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { ApiService } from '../services/api.service';
 import { SentimentChartComponent } from '../components/sentiment-chart.component';
+import { IssueImpactChartComponent } from '../components/issue-impact-chart.component';
 import { SummaryCardComponent } from '../components/summary-card/summary-card.component';
 import { IssueListComponent } from '../components/issue-list/issue-list.component';
 import { AlertsPanelComponent } from '../components/alerts/alerts-panel.component';
@@ -26,6 +27,7 @@ import {
     FormsModule,
     RouterModule,
     SentimentChartComponent,
+    IssueImpactChartComponent,
     SummaryCardComponent,
     IssueListComponent,
     AlertsPanelComponent,
@@ -129,7 +131,8 @@ export class DashboardComponent implements OnInit {
         this.playstoreRating = data.playstore_rating || null;
         this.loading = false;
       },
-      error: () => {
+      error: (err) => {
+        console.error('Failed to load insights:', err);
         this.error = 'Failed to load insights';
         this.loading = false;
       }

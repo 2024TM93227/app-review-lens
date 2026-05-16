@@ -76,9 +76,16 @@ def get_insights_v2(app_id: str, days: int = 30):
         # Rating trend (daily)
         rating_trend = _build_rating_trend(review_dicts)
 
-        # Fetch actual Play Store rating
+        # Fetch actual Play Store rating with fallback to average review rating
         app_info = fetch_app_rating(app_id)
         playstore_rating = app_info.get("score")
+        
+        # Fallback: if PlayStore fetch fails, calculate from ingested reviews
+        if not playstore_rating and review_dicts:
+            ratings = [r.get("rating") for r in review_dicts if r.get("rating")]
+            if ratings:
+                playstore_rating = round(sum(ratings) / len(ratings), 1)
+                logger.info(f"Using fallback rating for {app_id}: {playstore_rating} (from {len(ratings)} reviews)")
 
         return {
             "app_id": app_id,

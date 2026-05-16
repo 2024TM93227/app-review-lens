@@ -325,7 +325,11 @@ export class CompareComponent implements OnInit {
     issueRows: Array<any>,
   ): AppSummary {
     const name = this.getAppName(appId);
-    const avgRating = Number(sentimentSnapshot?.avg_rating ?? this.average(reviews.map(review => Number(review.rating || 0)))) || 0;
+    const avgRating = Number(
+      sentimentSnapshot?.playstore_rating ??
+      sentimentSnapshot?.avg_rating ??
+      this.average(reviews.map(review => Number(review.rating || 0)))
+    ) || 0;
     const avgSentiment = Number(sentimentSnapshot?.avg_sentiment_score ?? this.average(reviews.map(review => Number(review.sentiment_score || 0.5)))) || 0;
     const totalReviews = Number(sentimentSnapshot?.total_reviews ?? reviews.length) || 0;
     const window = this.calculateTrendWindow(trendData);
@@ -365,41 +369,73 @@ export class CompareComponent implements OnInit {
     const appAName = this.getAppName(this.appA);
     const appBName = this.getAppName(this.appB);
 
-    // Align opportunities directly with the feature comparison table:
-    // only rows where App B currently leads are treated as App A gap opportunities.
+    // 1. DEFENSIVE: Feature gaps where App B currently leads (what App A should improve).
     const gapRows = featureRows
       .filter(row => row.winner === appBName && row.delta >= 0.04)
       .sort((a, b) => b.delta - a.delta)
-      .slice(0, 3);
+      .slice(0, 2);
 
     gapRows.forEach(row => {
-      const gap = row.delta.toFixed(2);
       cards.push({
-        title: `Close ${this.formatLabel(row.feature)} gap`,
-        detail: `${appBName} currently leads on ${this.formatLabel(row.feature)}. Prioritize this area in the next sprint and target at least a ${Math.max(0.02, row.delta / 2).toFixed(2)} score lift to reduce churn risk.`,
+        title: `${this.formatLabel(row.feature)}`,
+        detail: `${appBName} currently leads on ${this.formatLabel(row.feature)}. Prioritize this area in the next sprint and target at least a ${Math.max(0.02, row.delta / 2).toFixed(2)} point lift.`,
         app: appAName,
         severity: row.delta > 0.12 ? 'high' : 'medium',
-        evidence: `${appAName}: ${row.aScore.toFixed(2)} vs ${appBName}: ${row.bScore.toFixed(2)} (gap ${gap})`,
+        evidence: `${appAName}: ${row.aScore.toFixed(2)} vs ${appBName}: ${row.bScore.toFixed(2)} (gap of ${row.delta.toFixed(2)} points)`,
       });
     });
 
-    // Align with pain-point table: rows where App B has higher negative complaint rate.
+    // 2. DEFENSIVE: Pain points where App B users complain more (what to address).
     const attackRows = painPointRows
       .filter(row => row.bNegPct - row.aNegPct >= 4 && row.bCount >= 5)
       .sort((a, b) => (b.bNegPct - b.aNegPct) - (a.bNegPct - a.aNegPct))
-      .slice(0, 3);
+      .slice(0, 2);
 
     attackRows.forEach(row => {
       const pctGap = (row.bNegPct - row.aNegPct).toFixed(1);
       cards.push({
-        title: `Attack competitor weakness in ${this.formatLabel(row.issue)}`,
-        detail: `${appBName} users report more pain in ${this.formatLabel(row.issue)}. Promote ${appAName}'s stronger experience in campaigns and tighten onboarding around this flow to capture switchers.`,
+        title: `${this.formatLabel(row.issue)}`,
+        detail: `${appBName} users report more pain in ${this.formatLabel(row.issue)}. Strengthen this flow and improve onboarding clarity in this journey.`,
         app: appAName,
         severity: row.bNegPct > 30 ? 'high' : 'medium',
-        evidence: `${appAName}: ${row.aNegPct.toFixed(1)}% negative vs ${appBName}: ${row.bNegPct.toFixed(1)}% negative (${pctGap}pt gap)`,
+        evidence: `${appAName}: ${row.aNegPct.toFixed(1)}% negative vs ${appBName}: ${row.bNegPct.toFixed(1)}% negative (${pctGap}% gap)`,
       });
     });
 
+    // 3. OFFENSIVE: Feature strengths of App A (App B's weakness that App A should capitalize on).
+    const strengthRows = featureRows
+      .filter(row => row.winner === appAName && row.delta >= 0.04)
+      .sort((a, b) => b.delta - a.delta)
+      .slice(0, 2);
+
+    strengthRows.forEach(row => {
+      cards.push({
+        title: `Capitalize on ${this.formatLabel(row.feature)}`,
+        detail: `${appAName} leads on ${this.formatLabel(row.feature)} — this is where ${appBName} is weak. Highlight this competitive advantage in your product messaging and user onboarding.`,
+        app: appAName,
+        severity: row.delta > 0.12 ? 'high' : 'medium',
+        evidence: `${appAName}: ${row.aScore.toFixed(2)} vs ${appBName}: ${row.bScore.toFixed(2)} (${appAName} leads by ${row.delta.toFixed(2)} points)`,
+      });
+    });
+
+    // 4. OFFENSIVE: Issue strengths of App A (where App B users complain more - highlight advantage).
+    const leverageRows = painPointRows
+      .filter(row => row.aNegPct - row.bNegPct >= 4 && row.aCount >= 5)
+      .sort((a, b) => (b.aNegPct - b.bNegPct) - (a.aNegPct - a.bNegPct))
+      .slice(0, 1);
+
+    leverageRows.forEach(row => {
+      const pctGap = (row.aNegPct - row.bNegPct).toFixed(1);
+      cards.push({
+        title: `Highlight ${this.formatLabel(row.issue)} advantage`,
+        detail: `${appAName} handles ${this.formatLabel(row.issue)} better than ${appBName}. Users report ${pctGap}% fewer complaints. Feature this strength to differentiate.`,
+        app: appAName,
+        severity: row.aNegPct < 15 ? 'high' : 'medium',
+        evidence: `${appAName}: ${row.aNegPct.toFixed(1)}% negative vs ${appBName}: ${row.bNegPct.toFixed(1)}% negative (${pctGap}% advantage)`,
+      });
+    });
+
+    // Deduplication
     const dedup = new Map<string, OpportunityCard>();
     cards.forEach(card => {
       const key = card.title.toLowerCase();
@@ -407,23 +443,42 @@ export class CompareComponent implements OnInit {
         dedup.set(key, card);
       }
     });
-    const finalCards = Array.from(dedup.values()).slice(0, 6);
+
+    const dedupedCards = Array.from(dedup.values());
+    const nonGenericCards = dedupedCards.filter(card => !this.isGenericOpportunityTitle(card.title));
+    const genericCards = dedupedCards.filter(card => this.isGenericOpportunityTitle(card.title));
+    
+    // Sort by severity within each category (high → medium → low)
+    nonGenericCards.sort((a, b) => this.severityRank(a.severity) - this.severityRank(b.severity));
+    genericCards.sort((a, b) => this.severityRank(a.severity) - this.severityRank(b.severity));
+    
+    const finalCards = [...nonGenericCards, ...genericCards].slice(0, 6);
 
     if (!finalCards.length) {
       const strongestGap = featureRows
         .filter(row => row.winner === appBName)
         .sort((a, b) => b.delta - a.delta)[0];
       finalCards.push({
-        title: 'No clear gap identified',
+        title: `Focus area: maintain consistency`,
         detail: strongestGap
-          ? `Closest actionable gap is ${this.formatLabel(strongestGap.feature)}. Run a focused experiment to lift ${appAName} from ${strongestGap.aScore.toFixed(2)} toward ${appBName}'s ${strongestGap.bScore.toFixed(2)}.`
-          : 'Both apps are currently close; watch weekly shifts in sentiment and complaint frequency to find openings.',
+          ? `The clearest move is still ${this.formatLabel(strongestGap.feature)}. Run a focused experiment to lift ${appAName} from ${strongestGap.aScore.toFixed(2)} toward ${appBName}'s ${strongestGap.bScore.toFixed(2)}.`
+          : 'Both apps are close, so keep monitoring weekly shifts in sentiment and complaint frequency for the next best opening.',
         app: appAName,
         severity: 'low',
       });
     }
 
     return finalCards;
+  }
+
+  private isGenericOpportunityTitle(title: string): boolean {
+    const normalized = title
+      .replace(/^focus area:\s*/i, '')
+      .replace(/^priority:\s*/i, '')
+      .trim()
+      .toLowerCase();
+
+    return normalized === 'app' || normalized === 'apps' || normalized === 'application';
   }
 
   private buildContextSignals(reviewsA: ReviewRecord[], reviewsB: ReviewRecord[]): ContextSignal[] {
@@ -454,10 +509,10 @@ export class CompareComponent implements OnInit {
     const topOpportunity = opportunities[0];
 
     if (winner === 'Tie') {
-      return `The two apps are close overall. ${this.getAppName(this.appA)} leads on ${appSummaries[0].strengths[0] || 'some feature areas'}, while ${this.getAppName(this.appB)} is stronger on ${appSummaries[1].strengths[0] || 'other feature areas'}. The clearest opportunity is ${topOpportunity?.title || 'closing the most visible feature gap'}.`;
+      return `The two apps are close overall. The most relevant next move is ${topOpportunity?.title || 'focusing on the most visible feature gap'}.`;
     }
 
-    return `${winner} is ahead overall. ${strongestFeature ? `${this.formatLabel(strongestFeature.feature)} is the clearest differentiator` : 'The strongest signal is balanced feature performance'}. ${topOpportunity ? topOpportunity.detail : 'Monitor trend momentum and complaint frequency to keep the lead.'}`;
+    return `${winner} is ahead overall. The most relevant next move is ${topOpportunity?.title || 'focusing on the clearest gap'}. ${strongestFeature ? `${this.formatLabel(strongestFeature.feature)} is the clearest differentiator.` : 'The strongest signal is balanced feature performance.'}`;
   }
 
   private calculateTrendWindow(trendData: TrendPoint[]): TrendWindow {

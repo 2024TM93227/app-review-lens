@@ -31,6 +31,7 @@ export interface FilterState {
           <button [class.active]="filters.rating === null" (click)="setRating(null)">All</button>
           <button *ngFor="let r of [1,2,3,4,5]"
                   [class.active]="filters.rating === r"
+                  [disabled]="isRatingDisabled"
                   (click)="setRating(r)">
             {{ r }}★
           </button>
@@ -41,11 +42,12 @@ export interface FilterState {
         <label>Sentiment</label>
         <div class="btn-group">
           <button [class.active]="filters.sentiment === null" (click)="setSentiment(null)">All</button>
-          <button class="sentiment-pos" [class.active]="filters.sentiment === 'positive'" (click)="setSentiment('positive')">Positive</button>
-          <button class="sentiment-neu" [class.active]="filters.sentiment === 'neutral'" (click)="setSentiment('neutral')">Neutral</button>
-          <button class="sentiment-neg" [class.active]="filters.sentiment === 'negative'" (click)="setSentiment('negative')">Negative</button>
+          <button class="sentiment-pos" [class.active]="filters.sentiment === 'positive'" [disabled]="isSentimentDisabled" (click)="setSentiment('positive')">Positive</button>
+          <button class="sentiment-neu" [class.active]="filters.sentiment === 'neutral'" [disabled]="isSentimentDisabled" (click)="setSentiment('neutral')">Neutral</button>
+          <button class="sentiment-neg" [class.active]="filters.sentiment === 'negative'" [disabled]="isSentimentDisabled" (click)="setSentiment('negative')">Negative</button>
         </div>
       </div>
+
     </div>
   `,
   styles: [`
@@ -79,6 +81,10 @@ export interface FilterState {
       color: white;
       border-color: #3498db;
     }
+    .btn-group button:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
     .btn-group button.sentiment-pos.active { background: #27ae60; border-color: #27ae60; }
     .btn-group button.sentiment-neu.active { background: #95a5a6; border-color: #95a5a6; }
     .btn-group button.sentiment-neg.active { background: #e74c3c; border-color: #e74c3c; }
@@ -96,6 +102,14 @@ export class FiltersComponent implements OnInit {
     sentiment: null,
   };
 
+  get isSentimentDisabled(): boolean {
+    return this.filters.rating !== null;
+  }
+
+  get isRatingDisabled(): boolean {
+    return this.filters.sentiment !== null;
+  }
+
   ngOnInit(): void {
     if (this.initialFilters) {
       this.filters = { ...this.initialFilters };
@@ -109,11 +123,17 @@ export class FiltersComponent implements OnInit {
 
   setRating(r: number | null) {
     this.filters.rating = r;
+    if (r !== null) {
+      this.filters.sentiment = null;
+    }
     this.emit();
   }
 
   setSentiment(s: string | null) {
     this.filters.sentiment = s;
+    if (s !== null) {
+      this.filters.rating = null;
+    }
     this.emit();
   }
 

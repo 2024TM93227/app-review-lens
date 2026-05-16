@@ -94,7 +94,7 @@
         <div class="summary-card-header">
           <div>
             <div class="summary-card-label">{{ app.name }}</div>
-            <h3>{{ app.avgRating | number:'1.1-1' }}★ rating</h3>
+            <h3>{{ app.avgRating | number:'1.1-1' }}★ Play Store rating</h3>
           </div>
           <span class="score-pill has-tooltip" [ngClass]="app.sentimentClass" [title]="getSentimentScoreTooltip(app)">{{ app.sentimentLabel }}</span>
         </div>
@@ -184,7 +184,7 @@
       <div class="panel-heading">
         <div>
           <div class="panel-kicker">Competitive opportunities</div>
-          <h3>Where {{ getAppName(appA) }} can close gap vs {{ getAppName(appB) }}</h3>
+          <h3>Top focus areas for {{ getAppName(appA) }}</h3>
         </div>
         <p>These cards are generated from the same feature and pain-point comparisons shown above.</p>
       </div>
@@ -193,7 +193,6 @@
         <article class="opportunity-card" *ngFor="let item of opportunities">
           <div class="opportunity-top">
             <span class="severity-pill" [ngClass]="item.severity">{{ item.severity }}</span>
-            <span class="opportunity-app">{{ item.app }}</span>
           </div>
           <h4>{{ item.title }}</h4>
           <p>{{ item.detail }}</p>

@@ -121,15 +121,15 @@
       </div>
 
       <!-- Charts: Rating Trend + Issue Distribution -->
-      <app-charts
+      <!-- <app-charts
         [ratingTrend]="ratingTrend"
         [issues]="topIssues">
-      </app-charts>
+      </app-charts> -->
 
-      <!-- Sentiment Overview (V1 pie chart) -->
-      <div class="chart-section" *ngIf="sentimentData.positive + sentimentData.negative + sentimentData.neutral > 0">
-        <h2>📊 Sentiment Distribution</h2>
-        <app-sentiment-chart [sentimentData]="sentimentData"></app-sentiment-chart>
+      <!-- Issue Impact Chart -->
+      <div class="chart-section" *ngIf="topIssues && topIssues.length > 0">
+        <h2>📊 Issue Impact Breakdown</h2>
+        <app-issue-impact-chart [issues]="topIssues"></app-issue-impact-chart>
       </div>
 
       <!-- Issue Prioritization Table -->
